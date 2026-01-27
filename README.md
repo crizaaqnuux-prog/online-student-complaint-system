@@ -58,4 +58,4 @@ This system utilizes a **Premium Aesthetics** approach:
 - **Modern Typography**: Powered by the 'Outfit' Google Font.
 
 ## 📄 License
-This project is open-source and available under the MIT License.  next
+This project is open-source and available under the MIT License.  
