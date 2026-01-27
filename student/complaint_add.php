@@ -67,7 +67,7 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="complaint_view.php">
-                                <i class="fas fa-list"></i> My Complaints
+                                <i class="fas fa-list"></i> My Complaint
                             </a>
                         </li>
                         <li class="nav-item">
