@@ -1,6 +1,6 @@
 # 🎓 Student Complaint Management System (SCMS)
 
-A premium, state-of-the-art PHP & MySQL-based web application designed to digitalize and streamline the process of handling student complaints in educational institutions.
+A premium, state-of-the-art PHP & MySQL-based web application designed to digitalize and streamline the process of handling student complaints in educational institutions. 
 
 ![SCMS Preview](cabasho.png)
 
@@ -58,4 +58,4 @@ This system utilizes a **Premium Aesthetics** approach:
 - **Modern Typography**: Powered by the 'Outfit' Google Font.
 
 ## 📄 License
-This project is open-source and available under the MIT License.
+This project is open-source and available under the MIT License.  next
