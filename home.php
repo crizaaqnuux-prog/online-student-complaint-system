@@ -1,9 +1,10 @@
+<?php require_once 'includes/config.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Complaint Management System</title>
+    <title><?php echo SITE_NAME; ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -340,7 +341,7 @@
     <nav class="navbar navbar-expand-lg navbar-light fixed-top">
         <div class="container">
             <a class="navbar-brand" href="#home">
-                <i class="fas fa-graduation-cap me-2"></i>StudentCare
+                <i class="fas fa-graduation-cap me-2"></i><?php echo SITE_NAME; ?>
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -377,7 +378,7 @@
             <div class="row align-items-center">
                 <div class="col-lg-6">
                     <div class="hero-content">
-                        <h1>Student Complaint Management Made Simple</h1>
+                        <h1><?php echo SITE_NAME; ?> Made Simple</h1>
                         <p>Streamline your institution's complaint handling process with our modern, efficient, and transparent digital platform.</p>
                         <div class="hero-buttons">
                             <a href="register.php" class="btn btn-primary-hero btn-hero">Get Started</a>
@@ -560,7 +561,7 @@
             <div class="row">
                 <div class="col-lg-4 mb-4">
                     <h5 style="color: white; margin-bottom: 20px;">
-                        <i class="fas fa-graduation-cap me-2"></i>StudentCare
+                        <i class="fas fa-graduation-cap me-2"></i><?php echo SITE_NAME; ?>
                     </h5>
                     <p style="color: rgba(255,255,255,0.7);">
                         Revolutionizing student complaint management with modern technology and user-centric design.
@@ -590,7 +591,7 @@
             <hr style="border-color: rgba(255,255,255,0.1);">
             
             <div class="text-center" style="color: rgba(255,255,255,0.7);">
-                <p>&copy; 2024 StudentCare. All rights reserved. Built with ❤️ for educational institutions.</p>
+                <p>&copy; <?php echo date('Y'); ?> <?php echo SITE_NAME; ?>. All rights reserved. Built with ❤️ for educational institutions.</p>
             </div>
         </div>
     </footer>

@@ -163,7 +163,7 @@ require_once 'includes/navbar.php';
                     </thead>
                     <tbody>
                         <?php foreach ($complaints as $complaint): ?>
-                            <tr>
+                            <tr onclick="manageComplaint(<?php echo $complaint['id']; ?>)" style="cursor: pointer;">
                                 <td class="ps-4 fw-bold text-primary">#<?php echo $complaint['id']; ?></td>
                                 <td>
                                     <div class="fw-bold"><?php echo htmlspecialchars($complaint['student_name']); ?></div>
@@ -174,7 +174,7 @@ require_once 'includes/navbar.php';
                                 <td><?php echo $complaint['assigned_to_name'] ?: '<span class="text-muted italic small">Unassigned</span>'; ?></td>
                                 <td><span class="text-muted small"><?php echo formatDate($complaint['created_at']); ?></span></td>
                                 <td class="text-end pe-4">
-                                    <button class="btn btn-sm btn-primary px-3 fw-bold" onclick="manageComplaint(<?php echo $complaint['id']; ?>)">
+                                    <button class="btn btn-sm btn-primary px-3 fw-bold" onclick="event.stopPropagation(); manageComplaint(<?php echo $complaint['id']; ?>)">
                                         Manage
                                     </button>
                                 </td>
@@ -186,7 +186,7 @@ require_once 'includes/navbar.php';
         <?php else: ?>
             <div class="text-center py-5">
                 <i class="fas fa-search fa-3x text-muted opacity-25 mb-3"></i>
-                <h6 class="text-muted">No complaints match your filters</h6>
+                <h6 class="text-muted">Cabasho Arday: No complaints match your search filters</h6>
             </div>
         <?php endif; ?>
     </div>
@@ -211,13 +211,25 @@ require_once 'includes/navbar.php';
 $extra_js = "
 <script>
     function manageComplaint(id) {
+        const modalBody = document.getElementById('complaintManageContent');
+        modalBody.innerHTML = '<div class=\"text-center p-5\"><div class=\"spinner-border text-primary\" role=\"status\"><span class=\"visually-hidden\">Loading...</span></div><p class=\"mt-2 text-muted\">Loading Cabasho Arday details...</p></div>';
+        
+        const modalElement = document.getElementById('manageComplaintModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+        modal.show();
+
         fetch('complaint_manage.php?id=' + id)
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('complaintManageContent').innerHTML = data;
-                new bootstrap.Modal(document.getElementById('manageComplaintModal')).show();
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.text();
             })
-            .catch(error => alert('Error loading details'));
+            .then(data => {
+                modalBody.innerHTML = data;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                modalBody.innerHTML = '<div class=\"alert alert-danger mx-3 my-3\">Cabasho Arday: Failed to load complaint details. Please check your connection and try again.</div>';
+            });
     }
 </script>";
 require_once 'includes/footer.php';

@@ -1,9 +1,10 @@
+<?php require_once 'includes/config.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Complaint Management System</title>
+    <title><?php echo SITE_NAME; ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -439,7 +440,7 @@
     <nav class="navbar navbar-expand-lg fixed-top" id="mainNavbar">
         <div class="container">
             <a class="navbar-brand" href="#home">
-                <i class="fas fa-graduation-cap me-2"></i>SCMS
+                <i class="fas fa-graduation-cap me-2"></i><?php echo SITE_NAME; ?>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -473,7 +474,7 @@
             <div class="row justify-content-center">
                 <div class="col-lg-8">
                     <div class="hero-content">
-                        <h1>Student Complaint Management System</h1>
+                        <h1><?php echo SITE_NAME; ?></h1>
                         <p>Streamline complaint handling, improve communication, and ensure every student voice is heard with our comprehensive management platform.</p>
                         <div class="hero-buttons">
                             <a href="register.php" class="btn-hero btn-primary-hero">Get Started</a>
@@ -558,7 +559,7 @@
                 <div class="col-lg-6 animate-on-scroll">
                     <div class="about-text">
                         <h2>Transforming Educational Institutions</h2>
-                        <p>Our Student Complaint Management System is designed to bridge the communication gap between students and educational institutions. We understand that every student's voice matters and every concern deserves proper attention.</p>
+                        <p>Our <?php echo SITE_NAME; ?> is designed to bridge the communication gap between students and educational institutions. We understand that every student's voice matters and every concern deserves proper attention.</p>
                         <p>With years of experience in educational technology, we've created a platform that not only manages complaints efficiently but also helps institutions build stronger relationships with their students through transparency and accountability.</p>
                         <div class="stats">
                             <div class="stat-item">
@@ -631,7 +632,7 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
-                    <h4>SCMS</h4>
+                    <h4><?php echo SITE_NAME; ?></h4>
                     <p>Making student voices heard through efficient complaint management and transparent communication.</p>
                 </div>
                 <div class="footer-section">
@@ -657,7 +658,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2024 Student Complaint Management System. All rights reserved.</p>
+                <p>&copy; <?php echo date('Y'); ?> <?php echo SITE_NAME; ?>. All rights reserved.</p>
             </div>
         </div>
     </footer>

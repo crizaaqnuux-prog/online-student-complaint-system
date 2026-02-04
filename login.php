@@ -31,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             if ($user && verifyPassword($password, $user['password'])) {
                 // Login successful
+                session_regenerate_id(true);
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['email'] = $user['email'];
@@ -48,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $error = 'Invalid email or password.';
             }
         } catch(PDOException $e) {
-            $error = 'An error occurred during login. Please try again.';
+            $error = 'Cabasho Arday Error: An error occurred during login. Please try again.';
         }
     }
 }
@@ -58,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Student Complaint Management System</title>
+    <title>Login - <?php echo SITE_NAME; ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -235,7 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="login-card">
             <div class="login-header">
                 <i class="fas fa-graduation-cap fa-2x mb-3"></i>
-                <h4>Welcome Back</h4>
+                <h4><?php echo SITE_NAME; ?></h4>
                 <p>Sign in to your account</p>
             </div>
             

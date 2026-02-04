@@ -54,11 +54,10 @@ function getStatusBadge($status) {
 function getComplaintCategories() {
     return [
         'academic' => 'Academic',
-        'hostel' => 'Hostel',
         'finance' => 'Finance',
         'library' => 'Library',
         'it' => 'IT Support',
-        'general' => 'General'
+        'general' => 'General Manager'
     ];
 }
 

@@ -1,56 +1,56 @@
+<?php
+require_once '../includes/config.php';
+require_once '../includes/functions.php';
+
+// Check if user is logged in and is a student
+if (!isLoggedIn() || !hasRole('student')) {
+    redirect('../index.php');
+}
+
+// Get filter parameters
+$status_filter = isset($_GET['status']) ? $_GET['status'] : '';
+$category_filter = isset($_GET['category']) ? $_GET['category'] : '';
+
+// Build query with filters
+$where_conditions = ["c.student_id = ?"];
+$params = [$_SESSION['user_id']];
+
+if ($status_filter) {
+    $where_conditions[] = "c.status = ?";
+    $params[] = $status_filter;
+}
+
+if ($category_filter) {
+    $where_conditions[] = "c.category = ?";
+    $params[] = $category_filter;
+}
+
+$where_clause = implode(' AND ', $where_conditions);
+
+// Get student's complaints with filters
+$stmt = $pdo->prepare("
+    SELECT c.*, u.username as assigned_to_name 
+    FROM complaints c 
+    LEFT JOIN users u ON c.assigned_to = u.id 
+    WHERE $where_clause
+    ORDER BY c.created_at DESC
+");
+$stmt->execute($params);
+$complaints = $stmt->fetchAll();
+
+$categories = getComplaintCategories();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Complaints - Student Portal</title>
+    <title>My Complaints - <?php echo SITE_NAME; ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
-    <?php
-    require_once '../includes/config.php';
-    require_once '../includes/functions.php';
-
-    // Check if user is logged in and is a student
-    if (!isLoggedIn() || !hasRole('student')) {
-        redirect('../index.php');
-    }
-
-    // Get filter parameters
-    $status_filter = isset($_GET['status']) ? $_GET['status'] : '';
-    $category_filter = isset($_GET['category']) ? $_GET['category'] : '';
-
-    // Build query with filters
-    $where_conditions = ["c.student_id = ?"];
-    $params = [$_SESSION['user_id']];
-
-    if ($status_filter) {
-        $where_conditions[] = "c.status = ?";
-        $params[] = $status_filter;
-    }
-
-    if ($category_filter) {
-        $where_conditions[] = "c.category = ?";
-        $params[] = $category_filter;
-    }
-
-    $where_clause = implode(' AND ', $where_conditions);
-
-    // Get student's complaints with filters
-    $stmt = $pdo->prepare("
-        SELECT c.*, u.username as assigned_to_name 
-        FROM complaints c 
-        LEFT JOIN users u ON c.assigned_to = u.id 
-        WHERE $where_clause
-        ORDER BY c.created_at DESC
-    ");
-    $stmt->execute($params);
-    $complaints = $stmt->fetchAll();
-
-    $categories = getComplaintCategories();
-    ?>
 
     <div class="container-fluid">
         <div class="row">
@@ -58,7 +58,7 @@
             <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
                 <div class="position-sticky pt-3">
                     <div class="text-center mb-4">
-                        <h5 class="text-white">Student Portal</h5>
+                        <h5 class="text-white"><?php echo SITE_NAME; ?></h5>
                         <small class="text-light"><?php echo htmlspecialchars($_SESSION['username']); ?></small>
                     </div>
                     <ul class="nav flex-column">
@@ -168,7 +168,9 @@
                                             </thead>
                                             <tbody>
                                                 <?php foreach ($complaints as $complaint): ?>
-                                                    <tr class="status-<?php echo $complaint['status']; ?>">
+                                                    <tr class="status-<?php echo $complaint['status']; ?> clickable-row" 
+                                                        onclick="viewComplaint(<?php echo $complaint['id']; ?>)"
+                                                        style="cursor: pointer;">
                                                         <td><strong>#<?php echo $complaint['id']; ?></strong></td>
                                                         <td>
                                                             <span class="badge bg-secondary">
@@ -192,7 +194,7 @@
                                                         <td><?php echo formatDate($complaint['updated_at']); ?></td>
                                                         <td>
                                                             <button class="btn btn-sm btn-outline-primary" 
-                                                                    onclick="viewComplaint(<?php echo $complaint['id']; ?>)">
+                                                                    onclick="event.stopPropagation(); viewComplaint(<?php echo $complaint['id']; ?>)">
                                                                 <i class="fas fa-eye"></i> View
                                                             </button>
                                                         </td>
@@ -204,7 +206,7 @@
                                 <?php else: ?>
                                     <div class="text-center py-5">
                                         <i class="fas fa-search fa-3x text-muted mb-3"></i>
-                                        <h5 class="text-muted">No complaints found</h5>
+                                        <h5 class="text-muted">Cabasho Arday: No complaints found</h5>
                                         <p class="text-muted">
                                             <?php if ($status_filter || $category_filter): ?>
                                                 Try adjusting your filters or <a href="complaint_view.php">view all complaints</a>.
@@ -239,18 +241,39 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function viewComplaint(id) {
+        window.viewComplaint = function(id) {
+            console.log('Viewing complaint:', id);
+            const modalBody = document.getElementById('complaintDetails');
+            
+            // Show loading state
+            modalBody.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading Cabasho Arday details...</p></div>';
+            
+            // Initialize and show modal
+            const modalElement = document.getElementById('complaintModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+            modal.show();
+
+            // Fetch details
             fetch('complaint_details.php?id=' + id)
-                .then(response => response.text())
+                .then(response => {
+                    console.log('Response received:', response.status);
+                    if (!response.ok) throw new Error('Server returned ' + response.status + ': ' + response.statusText);
+                    return response.text();
+                })
                 .then(data => {
-                    document.getElementById('complaintDetails').innerHTML = data;
-                    new bootstrap.Modal(document.getElementById('complaintModal')).show();
+                    console.log('Data loaded successfully');
+                    if (!data.trim()) {
+                        modalBody.innerHTML = '<div class="alert alert-warning">No data returned from server.</div>';
+                    } else {
+                        modalBody.innerHTML = data;
+                    }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error loading complaint details');
+                    console.error('Fetch Error:', error);
+                    alert('Cabasho Arday Error: ' + error.message);
+                    modalBody.innerHTML = '<div class="alert alert-danger mx-3 my-3"><strong>Error:</strong> ' + error.message + '</div>';
                 });
-        }
+        };
     </script>
 </body>
 </html>

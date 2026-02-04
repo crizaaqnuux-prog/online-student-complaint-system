@@ -1,3 +1,38 @@
+<?php
+require_once '../includes/config.php';
+require_once '../includes/functions.php';
+
+// Check if user is logged in and is a student
+if (!isLoggedIn() || !hasRole('student')) {
+    redirect('../index.php');
+}
+
+$error = '';
+$success = '';
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $category = sanitizeInput($_POST['category']);
+    $description = sanitizeInput($_POST['description']);
+
+    if (empty($category) || empty($description)) {
+        $error = 'Please fill in all required fields.';
+    } else {
+        try {
+            $stmt = $pdo->prepare("INSERT INTO complaints (student_id, category, description) VALUES (?, ?, ?)");
+            $stmt->execute([$_SESSION['user_id'], $category, $description]);
+            
+            $success = 'Complaint submitted successfully! You will be notified when it is reviewed.';
+            
+            // Clear form data
+            $_POST = array();
+        } catch(PDOException $e) {
+            $error = 'Cabasho Arday Error: An error occurred while submitting your complaint. Please try again.';
+        }
+    }
+}
+
+$categories = getComplaintCategories();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,41 +44,6 @@
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
-    <?php
-    require_once '../includes/config.php';
-    require_once '../includes/functions.php';
-
-    // Check if user is logged in and is a student
-    if (!isLoggedIn() || !hasRole('student')) {
-        redirect('../index.php');
-    }
-
-    $error = '';
-    $success = '';
-
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-        $category = sanitizeInput($_POST['category']);
-        $description = sanitizeInput($_POST['description']);
-
-        if (empty($category) || empty($description)) {
-            $error = 'Please fill in all required fields.';
-        } else {
-            try {
-                $stmt = $pdo->prepare("INSERT INTO complaints (student_id, category, description) VALUES (?, ?, ?)");
-                $stmt->execute([$_SESSION['user_id'], $category, $description]);
-                
-                $success = 'Complaint submitted successfully! You will be notified when it is reviewed.';
-                
-                // Clear form data
-                $_POST = array();
-            } catch(PDOException $e) {
-                $error = 'An error occurred while submitting your complaint. Please try again.';
-            }
-        }
-    }
-
-    $categories = getComplaintCategories();
-    ?>
 
     <div class="container-fluid">
         <div class="row">
@@ -166,9 +166,7 @@
                                                 case 'academic':
                                                     echo 'Issues related to courses, exams, grades, faculty';
                                                     break;
-                                                case 'hostel':
-                                                    echo 'Accommodation, roommates, facilities';
-                                                    break;
+
                                                 case 'finance':
                                                     echo 'Fee payments, scholarships, refunds';
                                                     break;

@@ -1,3 +1,37 @@
+<?php
+require_once '../includes/config.php';
+require_once '../includes/functions.php';
+
+// Check if user is logged in and is a student
+if (!isLoggedIn() || !hasRole('student')) {
+    redirect('../index.php');
+}
+
+// Get student's complaints
+$stmt = $pdo->prepare("
+    SELECT c.*, u.username as assigned_to_name 
+    FROM complaints c 
+    LEFT JOIN users u ON c.assigned_to = u.id 
+    WHERE c.student_id = ? 
+    ORDER BY c.created_at DESC
+");
+$stmt->execute([$_SESSION['user_id']]);
+$complaints = $stmt->fetchAll();
+
+// Get complaint statistics for this student
+$stmt = $pdo->prepare("
+    SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
+        SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) as resolved,
+        SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected
+    FROM complaints 
+    WHERE student_id = ?
+");
+$stmt->execute([$_SESSION['user_id']]);
+$stats = $stmt->fetch();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,40 +43,6 @@
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
-    <?php
-    require_once '../includes/config.php';
-    require_once '../includes/functions.php';
-
-    // Check if user is logged in and is a student
-    if (!isLoggedIn() || !hasRole('student')) {
-        redirect('../index.php');
-    }
-
-    // Get student's complaints
-    $stmt = $pdo->prepare("
-        SELECT c.*, u.username as assigned_to_name 
-        FROM complaints c 
-        LEFT JOIN users u ON c.assigned_to = u.id 
-        WHERE c.student_id = ? 
-        ORDER BY c.created_at DESC
-    ");
-    $stmt->execute([$_SESSION['user_id']]);
-    $complaints = $stmt->fetchAll();
-
-    // Get complaint statistics for this student
-    $stmt = $pdo->prepare("
-        SELECT 
-            COUNT(*) as total,
-            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-            SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
-            SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) as resolved,
-            SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected
-        FROM complaints 
-        WHERE student_id = ?
-    ");
-    $stmt->execute([$_SESSION['user_id']]);
-    $stats = $stmt->fetch();
-    ?>
 
     <div class="container-fluid">
         <div class="row">
@@ -163,7 +163,7 @@
                                             </thead>
                                             <tbody>
                                                 <?php foreach (array_slice($complaints, 0, 5) as $complaint): ?>
-                                                    <tr>
+                                                    <tr onclick="viewComplaint(<?php echo $complaint['id']; ?>)" style="cursor: pointer;">
                                                         <td>#<?php echo $complaint['id']; ?></td>
                                                         <td>
                                                             <span class="badge bg-secondary">
@@ -182,7 +182,7 @@
                                                         <td><?php echo formatDate($complaint['created_at']); ?></td>
                                                         <td>
                                                             <button class="btn btn-sm btn-outline-primary" 
-                                                                    onclick="viewComplaint(<?php echo $complaint['id']; ?>)">
+                                                                    onclick="event.stopPropagation(); viewComplaint(<?php echo $complaint['id']; ?>)">
                                                                 View
                                                             </button>
                                                         </td>
@@ -230,15 +230,25 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function viewComplaint(id) {
+            const modalBody = document.getElementById('complaintDetails');
+            modalBody.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading Cabasho Arday details...</p></div>';
+            
+            const modalElement = document.getElementById('complaintModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+            modal.show();
+
             fetch('complaint_details.php?id=' + id)
-                .then(response => response.text())
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.text();
+                })
                 .then(data => {
-                    document.getElementById('complaintDetails').innerHTML = data;
-                    new bootstrap.Modal(document.getElementById('complaintModal')).show();
+                    modalBody.innerHTML = data;
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error loading complaint details');
+                    alert('Cabasho Arday Error: Failed to load complaint details. ' + error.message);
+                    modalBody.innerHTML = '<div class="alert alert-danger mx-3 my-3">Cabasho Arday: Failed to load complaint details. Please check your connection and try again.</div>';
                 });
         }
     </script>

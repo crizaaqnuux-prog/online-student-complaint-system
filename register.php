@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $success = 'Registration successful! You can now login.';
             }
         } catch(PDOException $e) {
-            $error = 'An error occurred during registration. Please try again.';
+            $error = 'Cabasho Arday Error: An error occurred during registration. Please try again.';
         }
     }
 }
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Student Complaint System</title>
+    <title>Register - <?php echo SITE_NAME; ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="col-md-6 col-lg-5">
                 <div class="card shadow">
                     <div class="card-header bg-success text-white text-center">
-                        <h4>Student Registration</h4>
+                        <h4><?php echo SITE_NAME; ?> Registration</h4>
                         <p class="mb-0">Create your account</p>
                     </div>
                     <div class="card-body">

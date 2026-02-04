@@ -285,28 +285,46 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function viewComplaint(id) {
+            const modalBody = document.getElementById('complaintDetails');
+            modalBody.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading Cabasho Arday details...</p></div>';
+            
+            const modalElement = document.getElementById('complaintModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+            modal.show();
+
             fetch('complaint_details.php?id=' + id)
-                .then(response => response.text())
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.text();
+                })
                 .then(data => {
-                    document.getElementById('complaintDetails').innerHTML = data;
-                    new bootstrap.Modal(document.getElementById('complaintModal')).show();
+                    modalBody.innerHTML = data;
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error loading complaint details');
+                    modalBody.innerHTML = '<div class="alert alert-danger mx-3 my-3">Cabasho Arday: Failed to load complaint details. Please check your connection and try again.</div>';
                 });
         }
 
         function updateComplaint(id) {
+            const modalBody = document.getElementById('updateComplaintContent');
+            modalBody.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Preparing update form...</p></div>';
+            
+            const modalElement = document.getElementById('updateComplaintModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+            modal.show();
+
             fetch('complaint_update.php?id=' + id)
-                .then(response => response.text())
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.text();
+                })
                 .then(data => {
-                    document.getElementById('updateComplaintContent').innerHTML = data;
-                    new bootstrap.Modal(document.getElementById('updateComplaintModal')).show();
+                    modalBody.innerHTML = data;
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error loading complaint update form');
+                    modalBody.innerHTML = '<div class="alert alert-danger mx-3 my-3">Cabasho Arday: Failed to load update form. Please try again.</div>';
                 });
         }
 
