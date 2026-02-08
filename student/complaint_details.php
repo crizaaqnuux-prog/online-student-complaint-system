@@ -19,7 +19,7 @@ if ($complaint_id <= 0) {
 
 // Get complaint details - ensure it belongs to the logged-in student
 $stmt = $pdo->prepare("
-    SELECT c.*, u.username as assigned_to_name, s.username as student_name
+    SELECT c.*, u.username as assigned_to_name, u.role as handler_role, s.username as student_name
     FROM complaints c 
     LEFT JOIN users u ON c.assigned_to = u.id 
     LEFT JOIN users s ON c.student_id = s.id
@@ -31,6 +31,13 @@ $complaint = $stmt->fetch();
 if (!$complaint) {
     echo '<div class="alert alert-danger">Complaint not found or access denied.</div>';
     exit;
+}
+
+$response_label = 'Official Remarks';
+if ($complaint['handler_role'] == 'admin') {
+    $response_label = 'Admin Response';
+} elseif ($complaint['handler_role'] == 'staff') {
+    $response_label = 'Staff Response';
 }
 
 $categories = getComplaintCategories();
@@ -87,7 +94,7 @@ $categories = getComplaintCategories();
 
     <?php if ($complaint['admin_remarks']): ?>
         <div class="mb-3">
-            <h6>Admin Remarks</h6>
+            <h6><?php echo $response_label; ?></h6>
             <div class="p-3 bg-info bg-opacity-10 rounded border-start border-info border-3">
                 <?php echo nl2br(htmlspecialchars($complaint['admin_remarks'])); ?>
             </div>

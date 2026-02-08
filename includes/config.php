@@ -17,14 +17,15 @@ $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $current_dir = basename(dirname(__DIR__));
 
 // Use relative paths where possible, but define SITE_URL for absolute requirements
-define('SITE_URL', $protocol . "://" . $host . "/" . $current_dir);
-define('SITE_NAME', 'Cabasho Arday');
+define('SITE_URL', $protocol . "://" . $host . (empty($current_dir) || $current_dir == 'htdocs' ? '' : "/" . $current_dir));
+define('SITE_NAME', 'online student complaint system');
 
 // Session Configuration
 if (session_status() === PHP_SESSION_NONE) {
     // Secure session settings
     ini_set('session.cookie_httponly', 1);
     ini_set('session.use_only_cookies', 1);
+    ini_set('session.cookie_samesite', 'Lax');
     if ($protocol === 'https') {
         ini_set('session.cookie_secure', 1);
     }

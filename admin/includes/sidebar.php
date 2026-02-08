@@ -29,6 +29,11 @@
                     <i class="fas fa-chart-bar"></i> <span>Reports</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo $current_page == 'feedbacks.php' ? 'active' : ''; ?>" href="feedbacks.php">
+                    <i class="fas fa-comment-dots"></i> <span>Feedbacks</span>
+                </a>
+            </li>
             <li class="nav-item mt-4">
                 <a class="nav-link text-danger" href="../logout.php">
                     <i class="fas fa-power-off"></i> <span>Logout</span>

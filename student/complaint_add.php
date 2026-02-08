@@ -12,14 +12,15 @@ $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $category = sanitizeInput($_POST['category']);
+    $send_to = sanitizeInput($_POST['send_to']);
     $description = sanitizeInput($_POST['description']);
 
-    if (empty($category) || empty($description)) {
+    if (empty($category) || empty($send_to) || empty($description)) {
         $error = 'Please fill in all required fields.';
     } else {
         try {
-            $stmt = $pdo->prepare("INSERT INTO complaints (student_id, category, description) VALUES (?, ?, ?)");
-            $stmt->execute([$_SESSION['user_id'], $category, $description]);
+            $stmt = $pdo->prepare("INSERT INTO complaints (student_id, category, send_to, description) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$_SESSION['user_id'], $category, $send_to, $description]);
             
             $success = 'Complaint submitted successfully! You will be notified when it is reviewed.';
             
@@ -126,6 +127,15 @@ $categories = getComplaintCategories();
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="send_to" class="form-label">Send Complaint To *</label>
+                                            <select class="form-select" id="send_to" name="send_to" required>
+                                                <option value="admin" <?php echo (isset($_POST['send_to']) && $_POST['send_to'] == 'admin') ? 'selected' : ''; ?>>Administrator</option>
+                                                <option value="staff" <?php echo (isset($_POST['send_to']) && $_POST['send_to'] == 'staff') ? 'selected' : ''; ?>>Staff Member</option>
+                                            </select>
+                                            <small class="form-text text-muted">Choose who should handle your complaint.</small>
                                         </div>
 
                                         <div class="mb-3">

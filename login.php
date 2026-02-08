@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $error = 'Invalid email or password.';
             }
         } catch(PDOException $e) {
-            $error = 'Cabasho Arday Error: An error occurred during login. Please try again.';
+            $error = 'online student complaint system Error: An error occurred during login. Please try again.';
         }
     }
 }
@@ -274,14 +274,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <i class="fas fa-sign-in-alt me-2"></i>Sign In
                     </button>
                 </form>
-
-                <div class="text-center mt-4">
-                    <p class="text-muted">Demo Accounts:</p>
-                    <small class="text-muted">
-                        <strong>Admin:</strong> admin@example.com | <strong>Staff:</strong> staff@example.com<br>
-                        <strong>Password:</strong> admin123 (for admin) / staff123 (for staff)
-                    </small>
-                </div>
             </div>
 
             <div class="login-footer">

@@ -124,11 +124,11 @@ $categories = getComplaintCategories();
         </div>
 
         <div class="mb-4">
-            <label for="admin_remarks" class="form-label">Resolution Notes / Remarks</label>
+            <label for="admin_remarks" class="form-label">Resolution Notes / Staff Response *</label>
             <textarea class="form-control" id="admin_remarks" name="admin_remarks" rows="5" 
-                    placeholder="Add your resolution notes, actions taken, or feedback for the student..."><?php echo htmlspecialchars($complaint['admin_remarks']); ?></textarea>
+                    placeholder="Add your resolution notes, actions taken, or feedback for the student..." required><?php echo htmlspecialchars($complaint['admin_remarks']); ?></textarea>
             <small class="form-text text-muted">
-                These notes will be visible to the student and can help them understand the resolution process.
+                Your response will be visible to the student.
             </small>
         </div>
 
@@ -183,6 +183,9 @@ $categories = getComplaintCategories();
             <button type="button" class="btn btn-outline-success btn-sm" onclick="setStatus('resolved')">
                 <i class="fas fa-check"></i> Mark Resolved
             </button>
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="setStatus('rejected')">
+                <i class="fas fa-times"></i> Mark Rejected
+            </button>
             <button type="button" class="btn btn-outline-warning btn-sm" onclick="addCommonRemarks()">
                 <i class="fas fa-comment"></i> Add Common Remarks
             </button>
@@ -200,6 +203,8 @@ function setStatus(status) {
         remarksField.value = 'Your complaint is being reviewed and we are working on a resolution. We will update you soon with our progress.';
     } else if (status === 'resolved' && !remarksField.value) {
         remarksField.value = 'Your complaint has been resolved. Please contact us if you need any further assistance.';
+    } else if (status === 'rejected' && !remarksField.value) {
+        remarksField.value = 'Unfortunately, your complaint has been rejected. Please contact the department for more details.';
     }
 }
 

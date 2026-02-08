@@ -85,7 +85,7 @@ $categories = getComplaintCategories();
 
     <?php if ($complaint['admin_remarks']): ?>
         <div class="mb-3">
-            <h6>Admin Remarks</h6>
+            <h6>Staff Response</h6>
             <div class="p-3 bg-info bg-opacity-10 rounded border-start border-info border-3">
                 <?php echo nl2br(htmlspecialchars($complaint['admin_remarks'])); ?>
             </div>

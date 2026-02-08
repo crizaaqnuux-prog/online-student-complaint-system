@@ -52,6 +52,11 @@ $categories = getComplaintCategories();
             <span class="badge bg-white text-dark border px-3 py-2 rounded-3 mb-1">
                 <?php echo isset($categories[$complaint['category']]) ? $categories[$complaint['category']] : ucfirst($complaint['category']); ?>
             </span>
+            <div class="mb-1">
+                <span class="badge <?php echo $complaint['send_to'] == 'admin' ? 'bg-info' : 'bg-secondary'; ?> px-3 py-1 rounded-pill small">
+                    For: <?php echo ucfirst($complaint['send_to']); ?>
+                </span>
+            </div>
             <div class="small text-muted"><i class="far fa-clock me-1"></i> <?php echo formatDate($complaint['created_at']); ?></div>
         </div>
     </div>

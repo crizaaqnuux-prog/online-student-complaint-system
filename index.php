@@ -1,4 +1,34 @@
-<?php require_once 'includes/config.php'; ?>
+<?php 
+require_once 'includes/config.php'; 
+require_once 'includes/functions.php';
+
+$success = '';
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['contact_submit'])) {
+    $name = sanitizeInput($_POST['name']);
+    $email = sanitizeInput($_POST['email']);
+    $subject = sanitizeInput($_POST['subject']);
+    $message = sanitizeInput($_POST['message']);
+
+    if (empty($name) || empty($email) || empty($subject) || empty($message)) {
+        $error = "All fields are required.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = "Please enter a valid email address.";
+    } else {
+        try {
+            $stmt = $pdo->prepare("INSERT INTO contacts (name, email, subject, message) VALUES (?, ?, ?, ?)");
+            if ($stmt->execute([$name, $email, $subject, $message])) {
+                $success = "Thank you for your message! We will get back to you soon.";
+            } else {
+                $error = "Something went wrong. Please try again.";
+            }
+        } catch (PDOException $e) {
+            $error = "An error occurred. Please try again later.";
+        }
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -596,27 +626,41 @@
             <div class="row justify-content-center">
                 <div class="col-lg-8">
                     <div class="contact-form animate-on-scroll">
-                        <form>
+                        <?php if ($success): ?>
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i><?php echo $success; ?>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ($error): ?>
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-circle me-2"></i><?php echo $error; ?>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        <?php endif; ?>
+
+                        <form method="POST" action="#contact">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="name" class="form-label">Full Name</label>
-                                    <input type="text" class="form-control" id="name" required>
+                                    <input type="text" class="form-control" id="name" name="name" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="email" class="form-label">Email Address</label>
-                                    <input type="email" class="form-control" id="email" required>
+                                    <input type="email" class="form-control" id="email" name="email" required>
                                 </div>
                             </div>
                             <div class="mb-3">
                                 <label for="subject" class="form-label">Subject</label>
-                                <input type="text" class="form-control" id="subject" required>
+                                <input type="text" class="form-control" id="subject" name="subject" required>
                             </div>
                             <div class="mb-3">
                                 <label for="message" class="form-label">Message</label>
-                                <textarea class="form-control" id="message" rows="5" required></textarea>
+                                <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
                             </div>
                             <div class="text-center">
-                                <button type="submit" class="btn btn-submit">
+                                <button type="submit" name="contact_submit" class="btn btn-submit">
                                     <i class="fas fa-paper-plane me-2"></i>Send Message
                                 </button>
                             </div>
@@ -707,25 +751,7 @@
             observer.observe(el);
         });
 
-        // Contact form submission
-        document.querySelector('.contact-form form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Get form data
-            const formData = new FormData(this);
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            const subject = document.getElementById('subject').value;
-            const message = document.getElementById('message').value;
-            
-            // Simple validation
-            if (name && email && subject && message) {
-                alert('Thank you for your message! We will get back to you soon.');
-                this.reset();
-            } else {
-                alert('Please fill in all fields.');
-            }
-        });
+
 
         // Add hover effects to feature cards
         document.querySelectorAll('.feature-card').forEach(card => {

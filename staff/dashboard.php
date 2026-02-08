@@ -34,6 +34,16 @@
     $stmt->execute([$_SESSION['user_id']]);
     $assigned_complaints = $stmt->fetchAll();
 
+    // Get unassigned complaints intended for staff
+    $stmt = $pdo->query("
+        SELECT c.*, s.username as student_name, s.email as student_email
+        FROM complaints c 
+        JOIN users s ON c.student_id = s.id 
+        WHERE c.send_to = 'staff' AND c.assigned_to IS NULL
+        ORDER BY c.created_at DESC
+    ");
+    $available_complaints = $stmt->fetchAll();
+
     // Get statistics for this staff member
     $stmt = $pdo->prepare("
         SELECT 
@@ -67,6 +77,11 @@
                         <li class="nav-item">
                             <a class="nav-link" href="assigned_complaints.php">
                                 <i class="fas fa-list-alt"></i> Assigned Complaints
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="feedbacks.php">
+                                <i class="fas fa-comment-dots"></i> Visitor Feedbacks
                             </a>
                         </li>
                         <li class="nav-item">
@@ -205,6 +220,54 @@
                                         <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
                                         <h5 class="text-success">Great job!</h5>
                                         <p class="text-muted">No pending complaints to handle right now.</p>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Complaints (Sent to Staff) -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-info shadow-sm">
+                            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-hand-pointer me-2"></i> 
+                                    Available for Pickup (Sent to Staff)
+                                </h5>
+                                <span class="badge bg-light text-info"><?php echo count($available_complaints); ?> Available</span>
+                            </div>
+                            <div class="card-body">
+                                <?php if (count($available_complaints) > 0): ?>
+                                    <div class="row">
+                                        <?php foreach ($available_complaints as $complaint): ?>
+                                            <div class="col-lg-4 col-md-6 mb-3">
+                                                <div class="card h-100 border-light shadow-sm">
+                                                    <div class="card-body">
+                                                        <h6 class="card-title fw-bold text-primary">#<?php echo $complaint['id']; ?> - <?php echo ucfirst($complaint['category']); ?></h6>
+                                                        <p class="card-text small mb-2">
+                                                            <strong>From:</strong> <?php echo htmlspecialchars($complaint['student_name']); ?><br>
+                                                            <strong>Date:</strong> <?php echo formatDate($complaint['created_at']); ?>
+                                                        </p>
+                                                        <p class="card-text small text-muted mb-3">
+                                                            <?php echo substr(htmlspecialchars($complaint['description']), 0, 80) . '...'; ?>
+                                                        </p>
+                                                        <form method="POST" action="assigned_complaints.php">
+                                                            <input type="hidden" name="complaint_id" value="<?php echo $complaint['id']; ?>">
+                                                            <input type="hidden" name="action" value="pickup">
+                                                            <button type="submit" class="btn btn-sm btn-info w-100 text-white fw-bold" onclick="return confirm('Are you sure you want to pick up this complaint?')">
+                                                                <i class="fas fa-hand-holding me-1"></i> Pick Up Complaint
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="text-center py-3">
+                                        <p class="text-muted mb-0 italic small">No unassigned staff complaints available at the moment.</p>
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -380,6 +443,35 @@
                     console.error('Error:', error);
                     alert('Error loading complaint update form');
                 });
+        }
+
+        function quickUpdate(id, status) {
+            if (confirm('Are you sure you want to update this complaint status to ' + status.replace('_', ' ') + '?')) {
+                const formData = new FormData();
+                formData.append('complaint_id', id);
+                formData.append('status', status);
+                
+                let remarks = 'Complaint is being reviewed and worked on.';
+                if (status === 'resolved') {
+                    remarks = 'Complaint has been resolved. Please contact us if you need further assistance.';
+                } else if (status === 'rejected') {
+                    remarks = 'Unfortunately, your complaint has been rejected. Please contact the department for more details.';
+                }
+                formData.append('admin_remarks', remarks);
+
+                fetch('complaint_update.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(data => {
+                    location.reload();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error updating complaint');
+                });
+            }
         }
 
         // Auto-refresh every 60 seconds

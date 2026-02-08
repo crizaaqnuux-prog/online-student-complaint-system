@@ -110,10 +110,10 @@ function checkDatabaseSetup() {
     global $pdo;
     try {
         // Check if tables exist in MySQL
-        $stmt = $pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'student_complaints' AND table_name = 'users'");
+        $stmt = $pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '" . DB_NAME . "' AND table_name = 'users'");
         $usersExists = $stmt->fetchColumn() > 0;
         
-        $stmt = $pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'student_complaints' AND table_name = 'complaints'");
+        $stmt = $pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '" . DB_NAME . "' AND table_name = 'complaints'");
         $complaintsExists = $stmt->fetchColumn() > 0;
         
         return $usersExists && $complaintsExists;

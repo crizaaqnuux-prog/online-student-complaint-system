@@ -155,6 +155,7 @@ require_once 'includes/navbar.php';
                             <th class="ps-4">ID</th>
                             <th>Student Details</th>
                             <th>Category</th>
+                            <th>Intended For</th>
                             <th>Status</th>
                             <th>Handler</th>
                             <th>Submitted</th>
@@ -170,6 +171,11 @@ require_once 'includes/navbar.php';
                                     <div class="text-muted small"><?php echo htmlspecialchars($complaint['student_email']); ?></div>
                                 </td>
                                 <td><span class="badge bg-light text-dark border"><?php echo ucfirst($complaint['category']); ?></span></td>
+                                <td>
+                                    <span class="badge <?php echo $complaint['send_to'] == 'admin' ? 'bg-info' : 'bg-secondary'; ?>">
+                                        <?php echo ucfirst($complaint['send_to']); ?>
+                                    </span>
+                                </td>
                                 <td><span class="<?php echo getStatusBadge($complaint['status']); ?>"><?php echo ucfirst(str_replace('_', ' ', $complaint['status'])); ?></span></td>
                                 <td><?php echo $complaint['assigned_to_name'] ?: '<span class="text-muted italic small">Unassigned</span>'; ?></td>
                                 <td><span class="text-muted small"><?php echo formatDate($complaint['created_at']); ?></span></td>
@@ -186,7 +192,7 @@ require_once 'includes/navbar.php';
         <?php else: ?>
             <div class="text-center py-5">
                 <i class="fas fa-search fa-3x text-muted opacity-25 mb-3"></i>
-                <h6 class="text-muted">Cabasho Arday: No complaints match your search filters</h6>
+                <h6 class="text-muted">online student complaint system: No complaints match your search filters</h6>
             </div>
         <?php endif; ?>
     </div>
@@ -212,7 +218,7 @@ $extra_js = "
 <script>
     function manageComplaint(id) {
         const modalBody = document.getElementById('complaintManageContent');
-        modalBody.innerHTML = '<div class=\"text-center p-5\"><div class=\"spinner-border text-primary\" role=\"status\"><span class=\"visually-hidden\">Loading...</span></div><p class=\"mt-2 text-muted\">Loading Cabasho Arday details...</p></div>';
+        modalBody.innerHTML = '<div class=\"text-center p-5\"><div class=\"spinner-border text-primary\" role=\"status\"><span class=\"visually-hidden\">Loading...</span></div><p class=\"mt-2 text-muted\">Loading online student complaint system details...</p></div>';
         
         const modalElement = document.getElementById('manageComplaintModal');
         const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
@@ -228,7 +234,7 @@ $extra_js = "
             })
             .catch(error => {
                 console.error('Error:', error);
-                modalBody.innerHTML = '<div class=\"alert alert-danger mx-3 my-3\">Cabasho Arday: Failed to load complaint details. Please check your connection and try again.</div>';
+                modalBody.innerHTML = '<div class=\"alert alert-danger mx-3 my-3\">online student complaint system: Failed to load complaint details. Please check your connection and try again.</div>';
             });
     }
 </script>";

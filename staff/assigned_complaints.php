@@ -18,6 +18,18 @@
         redirect('../index.php');
     }
 
+    // Handle complaint pickup
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'pickup') {
+        $complaint_id = (int)$_POST['complaint_id'];
+        $stmt = $pdo->prepare("UPDATE complaints SET assigned_to = ?, status = 'in_progress' WHERE id = ? AND send_to = 'staff' AND assigned_to IS NULL");
+        if ($stmt->execute([$_SESSION['user_id'], $complaint_id])) {
+            $_SESSION['success'] = "Complaint #$complaint_id picked up successfully!";
+        } else {
+            $_SESSION['error'] = "Failed to pick up complaint.";
+        }
+        redirect('assigned_complaints.php');
+    }
+
     // Get filter parameters
     $status_filter = isset($_GET['status']) ? $_GET['status'] : '';
     $priority = isset($_GET['priority']) ? (bool)$_GET['priority'] : false;
@@ -77,6 +89,11 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="feedbacks.php">
+                                <i class="fas fa-comment-dots"></i> Visitor Feedbacks
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="../logout.php">
                                 <i class="fas fa-sign-out-alt"></i> Logout
                             </a>
@@ -97,6 +114,20 @@
                         </div>
                     </div>
                 </div>
+
+                <?php if (isset($_SESSION['success'])): ?>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <?php echo $_SESSION['success']; unset($_SESSION['success']); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (isset($_SESSION['error'])): ?>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
 
                 <!-- Filters -->
                 <div class="row mb-4">
@@ -186,7 +217,7 @@
                                                         
                                                         <?php if ($complaint['admin_remarks']): ?>
                                                             <div class="mb-3">
-                                                                <strong>Current Remarks:</strong>
+                                                                <strong>Staff Response:</strong>
                                                                 <p class="small text-info mb-0">
                                                                     <?php echo substr(htmlspecialchars($complaint['admin_remarks']), 0, 100) . '...'; ?>
                                                                 </p>
@@ -206,17 +237,25 @@
                                                         </div>
                                                         
                                                         <?php if ($complaint['status'] == 'pending'): ?>
-                                                            <div class="mt-2">
-                                                                <button class="btn btn-sm btn-info w-100" 
+                                                            <div class="mt-2 d-flex gap-2">
+                                                                <button class="btn btn-sm btn-info flex-fill" 
                                                                         onclick="quickUpdate(<?php echo $complaint['id']; ?>, 'in_progress')">
-                                                                    <i class="fas fa-play"></i> Start Working
+                                                                    <i class="fas fa-play"></i> Start
+                                                                </button>
+                                                                <button class="btn btn-sm btn-danger flex-fill" 
+                                                                        onclick="quickUpdate(<?php echo $complaint['id']; ?>, 'rejected')">
+                                                                    <i class="fas fa-times"></i> Reject
                                                                 </button>
                                                             </div>
                                                         <?php elseif ($complaint['status'] == 'in_progress'): ?>
-                                                            <div class="mt-2">
-                                                                <button class="btn btn-sm btn-success w-100" 
+                                                            <div class="mt-2 d-flex gap-2">
+                                                                <button class="btn btn-sm btn-success flex-fill" 
                                                                         onclick="quickUpdate(<?php echo $complaint['id']; ?>, 'resolved')">
-                                                                    <i class="fas fa-check"></i> Mark Resolved
+                                                                    <i class="fas fa-check"></i> Resolve
+                                                                </button>
+                                                                <button class="btn btn-sm btn-danger flex-fill" 
+                                                                        onclick="quickUpdate(<?php echo $complaint['id']; ?>, 'rejected')">
+                                                                    <i class="fas fa-times"></i> Reject
                                                                 </button>
                                                             </div>
                                                         <?php endif; ?>
@@ -286,7 +325,7 @@
     <script>
         function viewComplaint(id) {
             const modalBody = document.getElementById('complaintDetails');
-            modalBody.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading Cabasho Arday details...</p></div>';
+            modalBody.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading online student complaint system details...</p></div>';
             
             const modalElement = document.getElementById('complaintModal');
             const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
@@ -302,7 +341,7 @@
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    modalBody.innerHTML = '<div class="alert alert-danger mx-3 my-3">Cabasho Arday: Failed to load complaint details. Please check your connection and try again.</div>';
+                    modalBody.innerHTML = '<div class="alert alert-danger mx-3 my-3">online student complaint system: Failed to load complaint details. Please check your connection and try again.</div>';
                 });
         }
 
@@ -324,7 +363,7 @@
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    modalBody.innerHTML = '<div class="alert alert-danger mx-3 my-3">Cabasho Arday: Failed to load update form. Please try again.</div>';
+                    modalBody.innerHTML = '<div class="alert alert-danger mx-3 my-3">online student complaint system: Failed to load update form. Please try again.</div>';
                 });
         }
 
@@ -333,9 +372,14 @@
                 const formData = new FormData();
                 formData.append('complaint_id', id);
                 formData.append('status', status);
-                formData.append('admin_remarks', status === 'in_progress' ? 
-                    'Complaint is being reviewed and worked on.' : 
-                    'Complaint has been resolved. Please contact us if you need further assistance.');
+                
+                let remarks = 'Complaint is being reviewed and worked on.';
+                if (status === 'resolved') {
+                    remarks = 'Complaint has been resolved. Please contact us if you need further assistance.';
+                } else if (status === 'rejected') {
+                    remarks = 'Unfortunately, your complaint has been rejected. Please contact the department for more details.';
+                }
+                formData.append('admin_remarks', remarks);
 
                 fetch('complaint_update.php', {
                     method: 'POST',

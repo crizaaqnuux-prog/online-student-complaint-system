@@ -158,6 +158,7 @@ $categories = getComplaintCategories();
                                                 <tr>
                                                     <th>ID</th>
                                                     <th>Category</th>
+                                                    <th>Intended For</th>
                                                     <th>Description</th>
                                                     <th>Status</th>
                                                     <th>Assigned To</th>
@@ -175,6 +176,11 @@ $categories = getComplaintCategories();
                                                         <td>
                                                             <span class="badge bg-secondary">
                                                                 <?php echo ucfirst($complaint['category']); ?>
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge <?php echo $complaint['send_to'] == 'admin' ? 'bg-info' : 'bg-primary'; ?>">
+                                                                <?php echo ucfirst($complaint['send_to']); ?>
                                                             </span>
                                                         </td>
                                                         <td>
@@ -206,7 +212,7 @@ $categories = getComplaintCategories();
                                 <?php else: ?>
                                     <div class="text-center py-5">
                                         <i class="fas fa-search fa-3x text-muted mb-3"></i>
-                                        <h5 class="text-muted">Cabasho Arday: No complaints found</h5>
+                                        <h5 class="text-muted">online student complaint system: No complaints found</h5>
                                         <p class="text-muted">
                                             <?php if ($status_filter || $category_filter): ?>
                                                 Try adjusting your filters or <a href="complaint_view.php">view all complaints</a>.
@@ -246,7 +252,7 @@ $categories = getComplaintCategories();
             const modalBody = document.getElementById('complaintDetails');
             
             // Show loading state
-            modalBody.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading Cabasho Arday details...</p></div>';
+            modalBody.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading online student complaint system details...</p></div>';
             
             // Initialize and show modal
             const modalElement = document.getElementById('complaintModal');
@@ -270,7 +276,7 @@ $categories = getComplaintCategories();
                 })
                 .catch(error => {
                     console.error('Fetch Error:', error);
-                    alert('Cabasho Arday Error: ' + error.message);
+                    alert('online student complaint system Error: ' + error.message);
                     modalBody.innerHTML = '<div class="alert alert-danger mx-3 my-3"><strong>Error:</strong> ' + error.message + '</div>';
                 });
         };

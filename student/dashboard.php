@@ -231,7 +231,7 @@ $stats = $stmt->fetch();
     <script>
         function viewComplaint(id) {
             const modalBody = document.getElementById('complaintDetails');
-            modalBody.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading Cabasho Arday details...</p></div>';
+            modalBody.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading online student complaint system details...</p></div>';
             
             const modalElement = document.getElementById('complaintModal');
             const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
@@ -247,8 +247,8 @@ $stats = $stmt->fetch();
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Cabasho Arday Error: Failed to load complaint details. ' + error.message);
-                    modalBody.innerHTML = '<div class="alert alert-danger mx-3 my-3">Cabasho Arday: Failed to load complaint details. Please check your connection and try again.</div>';
+                    alert('online student complaint system Error: Failed to load complaint details. ' + error.message);
+                    modalBody.innerHTML = '<div class="alert alert-danger mx-3 my-3">online student complaint system: Failed to load complaint details. Please check your connection and try again.</div>';
                 });
         }
     </script>
