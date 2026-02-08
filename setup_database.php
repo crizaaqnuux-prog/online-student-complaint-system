@@ -27,6 +27,7 @@ try {
         id INT AUTO_INCREMENT PRIMARY KEY,
         student_id INT NOT NULL,
         category VARCHAR(100) NOT NULL,
+        send_to ENUM('admin', 'staff') DEFAULT 'admin',
         description TEXT NOT NULL,
         status ENUM('pending', 'in_progress', 'resolved', 'rejected') DEFAULT 'pending',
         assigned_to INT NULL,
@@ -52,6 +53,19 @@ try {
     
     $pdo->exec($sql_notifications);
     echo "Notifications table created successfully.<br>";
+
+    // Create contacts table (MySQL syntax)
+    $sql_contacts = "CREATE TABLE IF NOT EXISTS contacts (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(100) NOT NULL,
+        subject VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )";
+    
+    $pdo->exec($sql_contacts);
+    echo "Contacts table created successfully.<br>";
 
     // Insert default admin user if not exists
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE role = 'admin'");
