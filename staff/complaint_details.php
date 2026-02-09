@@ -20,179 +20,127 @@ $stmt = $pdo->prepare("
     SELECT c.*, s.username as student_name, s.email as student_email
     FROM complaints c 
     JOIN users s ON c.student_id = s.id 
-    WHERE c.id = ? AND c.assigned_to = ?
+    WHERE c.id = ? AND (c.assigned_to = ? OR (c.send_to = 'staff' AND c.assigned_to IS NULL))
 ");
 $stmt->execute([$complaint_id, $_SESSION['user_id']]);
 $complaint = $stmt->fetch();
 
 if (!$complaint) {
-    echo '<div class="alert alert-danger">Complaint not found or not assigned to you.</div>';
+    echo '<div class="alert alert-danger">Complaint not found or not accessible to you.</div>';
     exit;
 }
 
 $categories = getComplaintCategories();
 ?>
 
-<div class="complaint-details">
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <h6>Complaint ID</h6>
-            <p class="mb-0"><strong>#<?php echo $complaint['id']; ?></strong></p>
+<div class="complaint-details animate__animated animate__fadeIn">
+    <!-- Header Info -->
+    <div class="d-flex justify-content-between align-items-start mb-4 bg-light p-3 rounded-4 border">
+        <div class="d-flex align-items-center gap-3">
+            <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
+                <i data-lucide="hash"></i>
+            </div>
+            <div>
+                <h5 class="fw-bold mb-0"><?php echo $complaint['id']; ?></h5>
+                <span class="text-muted small">Tracking Number</span>
+            </div>
         </div>
-        <div class="col-md-6">
-            <h6>Current Status</h6>
-            <span class="<?php echo getStatusBadge($complaint['status']); ?>">
+        <div class="text-end">
+            <span class="badge-status <?php echo getStatusBadge($complaint['status']); ?> d-block mb-1">
                 <?php echo ucfirst(str_replace('_', ' ', $complaint['status'])); ?>
             </span>
+            <small class="text-muted"><i data-lucide="calendar" class="me-1" style="width: 14px;"></i> <?php echo formatDate($complaint['created_at']); ?></small>
         </div>
     </div>
 
-    <div class="row mb-3">
+    <!-- Student & Category -->
+    <div class="row g-4 mb-4">
         <div class="col-md-6">
-            <h6>Student</h6>
-            <p class="mb-0">
-                <strong><?php echo htmlspecialchars($complaint['student_name']); ?></strong><br>
-                <small class="text-muted"><?php echo htmlspecialchars($complaint['student_email']); ?></small>
-            </p>
+            <div class="p-3 border rounded-4">
+                <h6 class="text-muted small fw-bold text-uppercase mb-3"><i data-lucide="user" class="me-2 text-primary" style="width: 16px;"></i> Student Information</h6>
+                <p class="mb-0 fw-bold"><?php echo htmlspecialchars($complaint['student_name']); ?></p>
+                <p class="text-muted small mb-0"><?php echo htmlspecialchars($complaint['student_email']); ?></p>
+            </div>
         </div>
         <div class="col-md-6">
-            <h6>Category</h6>
-            <p class="mb-0">
-                <span class="badge bg-secondary">
+            <div class="p-3 border rounded-4">
+                <h6 class="text-muted small fw-bold text-uppercase mb-3"><i data-lucide="tag" class="me-2 text-primary" style="width: 16px;"></i> Category</h6>
+                <span class="badge bg-purple bg-opacity-10 text-purple px-3 py-2 rounded-3" style="color: #6C63FF; font-weight: 600;">
                     <?php echo isset($categories[$complaint['category']]) ? $categories[$complaint['category']] : ucfirst($complaint['category']); ?>
                 </span>
-            </p>
+            </div>
         </div>
     </div>
 
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <h6>Submitted On</h6>
-            <p class="mb-0"><?php echo formatDateTime($complaint['created_at']); ?></p>
-        </div>
-        <div class="col-md-6">
-            <h6>Last Updated</h6>
-            <p class="mb-0"><?php echo formatDateTime($complaint['updated_at']); ?></p>
-        </div>
-    </div>
-
-    <div class="mb-3">
-        <h6>Description</h6>
-        <div class="p-3 bg-light rounded">
+    <!-- Description -->
+    <div class="mb-4">
+        <h6 class="text-muted small fw-bold text-uppercase mb-3"><i data-lucide="align-left" class="me-2 text-primary" style="width: 16px;"></i> Complaint Description</h6>
+        <div class="p-4 bg-white border rounded-4 shadow-sm" style="line-height: 1.6;">
             <?php echo nl2br(htmlspecialchars($complaint['description'])); ?>
         </div>
     </div>
 
+    <!-- Staff Response if exists -->
     <?php if ($complaint['admin_remarks']): ?>
-        <div class="mb-3">
-            <h6>Staff Response</h6>
-            <div class="p-3 bg-info bg-opacity-10 rounded border-start border-info border-3">
+        <div class="mb-4">
+            <h6 class="text-muted small fw-bold text-uppercase mb-3"><i data-lucide="message-square" class="me-2 text-success" style="width: 16px;"></i> Your Response</h6>
+            <div class="p-4 bg-success bg-opacity-10 border-start border-success border-4 rounded-4 shadow-sm">
                 <?php echo nl2br(htmlspecialchars($complaint['admin_remarks'])); ?>
             </div>
         </div>
     <?php endif; ?>
 
-    <div class="row">
-        <div class="col-12">
-            <h6>Status Timeline</h6>
-            <div class="timeline">
-                <div class="timeline-item">
-                    <div class="timeline-marker bg-primary"></div>
-                    <div class="timeline-content">
-                        <h6 class="timeline-title">Complaint Submitted</h6>
-                        <p class="timeline-time"><?php echo formatDateTime($complaint['created_at']); ?></p>
-                        <p class="timeline-description">Complaint submitted by <?php echo htmlspecialchars($complaint['student_name']); ?></p>
-                    </div>
+    <!-- Timeline -->
+    <div class="mt-5">
+        <h6 class="text-muted small fw-bold text-uppercase mb-4"><i data-lucide="clock" class="me-2 text-primary" style="width: 16px;"></i> Process Timeline</h6>
+        <div class="timeline-container ps-4 border-start position-relative ms-2">
+            
+            <div class="timeline-item mb-4 position-relative">
+                <div class="timeline-dot position-absolute bg-primary rounded-circle" style="left: -32px; top: 0; width: 14px; height: 14px; border: 3px solid white; box-shadow: 0 0 0 4px #e0e7ff;"></div>
+                <div class="ps-3">
+                    <h6 class="fw-bold mb-1">Submitted</h6>
+                    <p class="text-muted extra-small mb-1"><?php echo formatDateTime($complaint['created_at']); ?></p>
+                    <p class="small text-muted mb-0">Original complaint created by <?php echo htmlspecialchars($complaint['student_name']); ?>.</p>
                 </div>
-
-                <div class="timeline-item">
-                    <div class="timeline-marker bg-info"></div>
-                    <div class="timeline-content">
-                        <h6 class="timeline-title">Assigned to You</h6>
-                        <p class="timeline-time"><?php echo formatDateTime($complaint['updated_at']); ?></p>
-                        <p class="timeline-description">This complaint has been assigned to you for resolution.</p>
-                    </div>
-                </div>
-
-                <?php if ($complaint['status'] == 'resolved'): ?>
-                    <div class="timeline-item">
-                        <div class="timeline-marker bg-success"></div>
-                        <div class="timeline-content">
-                            <h6 class="timeline-title">Complaint Resolved</h6>
-                            <p class="timeline-time"><?php echo formatDateTime($complaint['updated_at']); ?></p>
-                            <p class="timeline-description">Complaint has been marked as resolved.</p>
-                        </div>
-                    </div>
-                <?php elseif ($complaint['status'] == 'rejected'): ?>
-                    <div class="timeline-item">
-                        <div class="timeline-marker bg-danger"></div>
-                        <div class="timeline-content">
-                            <h6 class="timeline-title">Complaint Rejected</h6>
-                            <p class="timeline-time"><?php echo formatDateTime($complaint['updated_at']); ?></p>
-                            <p class="timeline-description">Complaint has been rejected.</p>
-                        </div>
-                    </div>
-                <?php endif; ?>
             </div>
+
+            <?php if ($complaint['updated_at'] != $complaint['created_at']): ?>
+            <div class="timeline-item mb-4 position-relative">
+                <div class="timeline-dot position-absolute bg-info rounded-circle" style="left: -32px; top: 0; width: 14px; height: 14px; border: 3px solid white; box-shadow: 0 0 0 4px #e0f2fe;"></div>
+                <div class="ps-3">
+                    <h6 class="fw-bold mb-1">Active Updates</h6>
+                    <p class="text-muted extra-small mb-1"><?php echo formatDateTime($complaint['updated_at']); ?></p>
+                    <p class="small text-muted mb-0">Status changed or remarks added by staff.</p>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($complaint['status'] == 'resolved'): ?>
+            <div class="timeline-item position-relative">
+                <div class="timeline-dot position-absolute bg-success rounded-circle" style="left: -32px; top: 0; width: 14px; height: 14px; border: 3px solid white; box-shadow: 0 0 0 4px #dcfce7;"></div>
+                <div class="ps-3">
+                    <h6 class="fw-bold mb-1">Successfully Resolved</h6>
+                    <p class="small text-muted mb-0">Issue has been fully addressed.</p>
+                </div>
+            </div>
+            <?php endif; ?>
+
         </div>
     </div>
 </div>
 
 <style>
-.timeline {
-    position: relative;
-    padding-left: 30px;
-    margin-top: 20px;
-}
-
-.timeline::before {
+.extra-small { font-size: 0.75rem; }
+.timeline-container::before {
     content: '';
     position: absolute;
-    left: 15px;
+    left: -1px;
     top: 0;
     bottom: 0;
     width: 2px;
-    background: #e9ecef;
-}
-
-.timeline-item {
-    position: relative;
-    margin-bottom: 20px;
-}
-
-.timeline-marker {
-    position: absolute;
-    left: -37px;
-    top: 0;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    border: 2px solid white;
-    box-shadow: 0 0 0 2px #e9ecef;
-}
-
-.timeline-content {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    border-left: 3px solid #dee2e6;
-}
-
-.timeline-title {
-    margin-bottom: 5px;
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.timeline-time {
-    margin-bottom: 5px;
-    font-size: 0.8rem;
-    color: #6c757d;
-}
-
-.timeline-description {
-    margin-bottom: 0;
-    font-size: 0.85rem;
-    color: #495057;
+    background: #e5e7eb;
 }
 </style>
+<script>
+    lucide.createIcons();
+</script>

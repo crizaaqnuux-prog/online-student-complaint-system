@@ -15,32 +15,51 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $admin_remarks = sanitizeInput($_POST['admin_remarks']);
     
     try {
+        // Update the complaint
         $stmt = $pdo->prepare("
             UPDATE complaints 
-            SET status = ?, admin_remarks = ? 
+            SET status = ?, admin_remarks = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ? AND assigned_to = ?
         ");
-        $stmt->execute([$new_status, $admin_remarks, $complaint_id, $_SESSION['user_id']]);
         
-        // Send notification to student
-        $stmt = $pdo->prepare("SELECT student_id FROM complaints WHERE id = ?");
-        $stmt->execute([$complaint_id]);
-        $complaint = $stmt->fetch();
-        
-        if ($complaint) {
-            sendNotification($complaint['student_id'], "Your complaint #$complaint_id has been updated by staff. Status: " . ucfirst(str_replace('_', ' ', $new_status)));
+        if ($stmt->execute([$new_status, $admin_remarks, $complaint_id, $_SESSION['user_id']])) {
+            // Send notification to student
+            $stmt_notif = $pdo->prepare("SELECT student_id FROM complaints WHERE id = ?");
+            $stmt_notif->execute([$complaint_id]);
+            $complaint_data = $stmt_notif->fetch();
+            
+            if ($complaint_data) {
+                $status_text = ucfirst(str_replace('_', ' ', $new_status));
+                sendNotification($complaint_data['student_id'], "Your complaint #$complaint_id has been updated to '$status_text' by staff.");
+            }
+            
+            echo '<div class="alert alert-success border-0 shadow-lg rounded-4 p-4 mb-0 animate__animated animate__bounceIn">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                            <i data-lucide="check-circle-2" class="text-success" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1 text-success">Update Successful!</h6>
+                            <p class="small mb-0 text-success-emphasis">The complaint status has been set to <strong>' . $status_text . '</strong>.</p>
+                        </div>
+                    </div>
+                  </div>';
+            echo '<script>
+                    if(typeof lucide !== "undefined") lucide.createIcons();
+                    setTimeout(function(){ location.reload(); }, 1500);
+                  </script>';
+        } else {
+            echo '<div class="alert alert-danger border-0 shadow-sm rounded-4">Failed to execute update. Please try again.</div>';
         }
-        
-        echo '<div class="alert alert-success">Complaint updated successfully!</div>';
-        echo '<script>setTimeout(function(){ location.reload(); }, 2000);</script>';
         exit;
     } catch(PDOException $e) {
-        echo '<div class="alert alert-danger">Error updating complaint. Please try again.</div>';
+        echo '<div class="alert alert-danger border-0 shadow-sm rounded-4">Error: ' . $e->getMessage() . '</div>';
         exit;
     }
 }
 
 $complaint_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$initial_status = isset($_GET['status']) ? $_GET['status'] : '';
 
 if ($complaint_id <= 0) {
     echo '<div class="alert alert-danger">Invalid complaint ID.</div>';
@@ -62,168 +81,137 @@ if (!$complaint) {
     exit;
 }
 
-$categories = getComplaintCategories();
+// Override current status with initial status if provided
+$display_status = $initial_status ?: $complaint['status'];
 ?>
 
-<div class="complaint-update">
-    <!-- Complaint Summary -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-8">
-                    <h6>Complaint #<?php echo $complaint['id']; ?> - <?php echo htmlspecialchars($complaint['student_name']); ?></h6>
-                    <p class="mb-0">
-                        <span class="badge bg-secondary me-2"><?php echo ucfirst($complaint['category']); ?></span>
-                        <span class="<?php echo getStatusBadge($complaint['status']); ?>">
-                            <?php echo ucfirst(str_replace('_', ' ', $complaint['status'])); ?>
-                        </span>
-                    </p>
-                </div>
-                <div class="col-md-4 text-end">
-                    <small class="text-muted">
-                        Submitted: <?php echo formatDate($complaint['created_at']); ?>
-                    </small>
-                </div>
-            </div>
+<div class="complaint-update animate__animated animate__fadeIn">
+    <!-- Header Summary -->
+    <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded-4 border">
+        <div>
+            <span class="text-muted extra-small text-uppercase fw-bold">Currently Updating</span>
+            <h6 class="fw-bold mb-0 text-primary">Complaint #<?php echo $complaint['id']; ?></h6>
+        </div>
+        <div class="text-end">
+            <span class="badge-status <?php echo getStatusBadge($complaint['status']); ?>">
+                Current: <?php echo ucfirst(str_replace('_', ' ', $complaint['status'])); ?>
+            </span>
         </div>
     </div>
 
-    <!-- Description -->
-    <div class="mb-4">
-        <h6>Description</h6>
-        <div class="p-3 bg-light rounded">
-            <?php echo nl2br(htmlspecialchars($complaint['description'])); ?>
-        </div>
-    </div>
-
-    <!-- Current Admin Remarks -->
-    <?php if ($complaint['admin_remarks']): ?>
-        <div class="mb-4">
-            <h6>Current Remarks</h6>
-            <div class="p-3 bg-info bg-opacity-10 rounded border-start border-info border-3">
-                <?php echo nl2br(htmlspecialchars($complaint['admin_remarks'])); ?>
-            </div>
-        </div>
-    <?php endif; ?>
-
-    <!-- Update Form -->
-    <form method="POST">
+    <!-- Main Update Form -->
+    <form method="POST" id="mainUpdateForm" action="complaint_update.php" onsubmit="submitUpdateForm(event)">
         <input type="hidden" name="complaint_id" value="<?php echo $complaint['id']; ?>">
         
-        <div class="mb-3">
-            <label for="status" class="form-label">Update Status *</label>
-            <select class="form-select" id="status" name="status" required>
-                <option value="pending" <?php echo $complaint['status'] == 'pending' ? 'selected' : ''; ?>>Pending</option>
-                <option value="in_progress" <?php echo $complaint['status'] == 'in_progress' ? 'selected' : ''; ?>>In Progress</option>
-                <option value="resolved" <?php echo $complaint['status'] == 'resolved' ? 'selected' : ''; ?>>Resolved</option>
-                <option value="rejected" <?php echo $complaint['status'] == 'rejected' ? 'selected' : ''; ?>>Rejected</option>
-            </select>
-            <small class="form-text text-muted">
-                Select the current status of this complaint.
-            </small>
-        </div>
-
         <div class="mb-4">
-            <label for="admin_remarks" class="form-label">Resolution Notes / Staff Response *</label>
-            <textarea class="form-control" id="admin_remarks" name="admin_remarks" rows="5" 
-                    placeholder="Add your resolution notes, actions taken, or feedback for the student..." required><?php echo htmlspecialchars($complaint['admin_remarks']); ?></textarea>
-            <small class="form-text text-muted">
-                Your response will be visible to the student.
-            </small>
-        </div>
-
-        <!-- Status-specific guidance -->
-        <div class="mb-4">
-            <h6>Status Guidelines</h6>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card border-warning">
-                        <div class="card-body">
-                            <h6 class="card-title text-warning">
-                                <i class="fas fa-clock"></i> In Progress
-                            </h6>
-                            <p class="card-text small">
-                                Use when you are actively working on the complaint. 
-                                Provide updates on what actions you are taking.
-                            </p>
-                        </div>
-                    </div>
+            <label class="form-label fw-bold small text-muted text-uppercase mb-3">Choose New Status</label>
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <input type="radio" class="btn-check" name="status" id="status_pending" value="pending" <?php echo $display_status == 'pending' ? 'checked' : ''; ?>>
+                    <label class="btn btn-outline-warning w-100 py-3 rounded-4 shadow-sm border-2 status-option-label" for="status_pending" onclick="updateTemplate('pending')">
+                        <i data-lucide="clock" class="d-block mb-1 mx-auto"></i>
+                        <span class="small fw-bold">Pending</span>
+                    </label>
                 </div>
-                <div class="col-md-6">
-                    <div class="card border-success">
-                        <div class="card-body">
-                            <h6 class="card-title text-success">
-                                <i class="fas fa-check-circle"></i> Resolved
-                            </h6>
-                            <p class="card-text small">
-                                Use when the issue has been completely addressed. 
-                                Explain what was done to resolve the complaint.
-                            </p>
-                        </div>
-                    </div>
+                <div class="col-6 col-md-3">
+                    <input type="radio" class="btn-check" name="status" id="status_progress" value="in_progress" <?php echo $display_status == 'in_progress' ? 'checked' : ''; ?>>
+                    <label class="btn btn-outline-info w-100 py-3 rounded-4 shadow-sm border-2 status-option-label" for="status_progress" onclick="updateTemplate('in_progress')">
+                        <i data-lucide="activity" class="d-block mb-1 mx-auto"></i>
+                        <span class="small fw-bold">In Progress</span>
+                    </label>
+                </div>
+                <div class="col-6 col-md-3">
+                    <input type="radio" class="btn-check" name="status" id="status_resolved" value="resolved" <?php echo $display_status == 'resolved' ? 'checked' : ''; ?>>
+                    <label class="btn btn-outline-success w-100 py-3 rounded-4 shadow-sm border-2 status-option-label" for="status_resolved" onclick="updateTemplate('resolved')">
+                        <i data-lucide="check-circle" class="d-block mb-1 mx-auto"></i>
+                        <span class="small fw-bold">Resolved</span>
+                    </label>
+                </div>
+                <div class="col-6 col-md-3">
+                    <input type="radio" class="btn-check" name="status" id="status_rejected" value="rejected" <?php echo $display_status == 'rejected' ? 'checked' : ''; ?>>
+                    <label class="btn btn-outline-danger w-100 py-3 rounded-4 shadow-sm border-2 status-option-label" for="status_rejected" onclick="updateTemplate('rejected')">
+                        <i data-lucide="x-circle" class="d-block mb-1 mx-auto"></i>
+                        <span class="small fw-bold">Rejected</span>
+                    </label>
                 </div>
             </div>
         </div>
 
-        <div class="d-flex justify-content-end">
-            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save"></i> Update Complaint
+        <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <label for="admin_remarks" class="form-label fw-bold small text-muted text-uppercase mb-0">Response / Resolution Remarks</label>
+                <div class="dropdown">
+                    <button class="btn btn-link btn-sm text-decoration-none dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                        <i data-lucide="list" class="me-1" style="width: 14px;"></i> Templates
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2 rounded-3">
+                        <li><a class="dropdown-item rounded-2 mb-1" href="javascript:void(0)" onclick="applyTemplate('General inquiry received. We are investigating.')">Investigating</a></li>
+                        <li><a class="dropdown-item rounded-2 mb-1" href="javascript:void(0)" onclick="applyTemplate('The issue has been resolved successfully. Academic records updated.')">Resolved Academic</a></li>
+                        <li><a class="dropdown-item rounded-2 mb-1" href="javascript:void(0)" onclick="applyTemplate('Documentation provided is insufficient. Please resubmit with details.')">Need Details</a></li>
+                        <li><a class="dropdown-item rounded-2 text-danger" href="javascript:void(0)" onclick="applyTemplate('This request does not meet university guidelines and is rejected.')">Reject Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <textarea class="form-control border-light-subtle shadow-sm rounded-4 p-4" id="admin_remarks" name="admin_remarks" rows="5" 
+                    placeholder="Enter resolution notes here... The student will see this response." required><?php echo htmlspecialchars($complaint['admin_remarks']); ?></textarea>
+        </div>
+
+        <div class="d-flex gap-2 justify-content-end pt-2 border-top">
+            <button type="button" class="btn btn-light px-4 py-2 rounded-pill fw-bold" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary px-5 py-2 rounded-pill fw-bold shadow-sm d-flex align-items-center gap-2" id="submitBtn">
+                Save & Update Status
             </button>
         </div>
     </form>
-
-    <!-- Quick Actions -->
-    <div class="mt-4 p-3 bg-light rounded">
-        <h6>Quick Actions</h6>
-        <div class="btn-group" role="group">
-            <button type="button" class="btn btn-outline-info btn-sm" onclick="setStatus('in_progress')">
-                <i class="fas fa-play"></i> Mark In Progress
-            </button>
-            <button type="button" class="btn btn-outline-success btn-sm" onclick="setStatus('resolved')">
-                <i class="fas fa-check"></i> Mark Resolved
-            </button>
-            <button type="button" class="btn btn-outline-danger btn-sm" onclick="setStatus('rejected')">
-                <i class="fas fa-times"></i> Mark Rejected
-            </button>
-            <button type="button" class="btn btn-outline-warning btn-sm" onclick="addCommonRemarks()">
-                <i class="fas fa-comment"></i> Add Common Remarks
-            </button>
-        </div>
-    </div>
 </div>
 
 <script>
-function setStatus(status) {
-    document.getElementById('status').value = status;
-    
-    // Set appropriate remarks based on status
-    const remarksField = document.getElementById('admin_remarks');
-    if (status === 'in_progress' && !remarksField.value) {
-        remarksField.value = 'Your complaint is being reviewed and we are working on a resolution. We will update you soon with our progress.';
-    } else if (status === 'resolved' && !remarksField.value) {
-        remarksField.value = 'Your complaint has been resolved. Please contact us if you need any further assistance.';
-    } else if (status === 'rejected' && !remarksField.value) {
-        remarksField.value = 'Unfortunately, your complaint has been rejected. Please contact the department for more details.';
-    }
-}
+    // Initialize icons for the dynamic content
+    lucide.createIcons();
 
-function addCommonRemarks() {
-    const remarksField = document.getElementById('admin_remarks');
-    const commonRemarks = [
-        'Thank you for bringing this to our attention. We are investigating the matter.',
-        'We have forwarded your complaint to the relevant department for action.',
-        'Your complaint has been resolved. Please let us know if you need any further assistance.',
-        'We apologize for any inconvenience caused. The issue has been addressed.',
-        'Additional information may be required to process your complaint further.'
-    ];
-    
-    let selectedRemark = prompt('Select a common remark:\n' + 
-        commonRemarks.map((remark, index) => `${index + 1}. ${remark}`).join('\n') + 
-        '\n\nEnter the number (1-5):');
-    
-    if (selectedRemark && selectedRemark >= 1 && selectedRemark <= 5) {
-        remarksField.value = commonRemarks[selectedRemark - 1];
+    function applyTemplate(text) {
+        const textarea = document.getElementById('admin_remarks');
+        textarea.value = text;
+        textarea.focus();
     }
-}
+
+    function updateTemplate(status) {
+        const textarea = document.getElementById('admin_remarks');
+        if (textarea.value.trim() === '') {
+            if (status === 'in_progress') {
+                textarea.value = 'We have received your complaint and are currently working on a resolution. We will update you shortly.';
+            } else if (status === 'resolved') {
+                textarea.value = 'Resolution complete: The issues reported in this complaint have been fully addressed. Thank you for your patience.';
+            } else if (status === 'rejected') {
+                textarea.value = 'We have reviewed your complaint but are unable to proceed at this time as it does not meet the necessary criteria.';
+            }
+        }
+    }
+
+    function submitUpdateForm(e) {
+        e.preventDefault();
+        const form = e.target;
+        const btn = document.getElementById('submitBtn');
+        const originalBtnContent = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Updating...';
+        
+        const formData = new FormData(form);
+        
+        fetch('complaint_update.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('updateComplaintContent').innerHTML = data;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the complaint.');
+            btn.disabled = false;
+            btn.innerHTML = originalBtnContent;
+        });
+    }
 </script>

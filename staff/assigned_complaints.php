@@ -18,9 +18,20 @@
         redirect('../index.php');
     }
 
-    // Handle complaint pickup
+    // Handle complaint pickup via POST or GET
     if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'pickup') {
         $complaint_id = (int)$_POST['complaint_id'];
+        $stmt = $pdo->prepare("UPDATE complaints SET assigned_to = ?, status = 'in_progress' WHERE id = ? AND send_to = 'staff' AND assigned_to IS NULL");
+        if ($stmt->execute([$_SESSION['user_id'], $complaint_id])) {
+            $_SESSION['success'] = "Complaint #$complaint_id picked up successfully!";
+        } else {
+            $_SESSION['error'] = "Failed to pick up complaint.";
+        }
+        redirect('assigned_complaints.php');
+    }
+
+    if (isset($_GET['pickup'])) {
+        $complaint_id = (int)$_GET['pickup'];
         $stmt = $pdo->prepare("UPDATE complaints SET assigned_to = ?, status = 'in_progress' WHERE id = ? AND send_to = 'staff' AND assigned_to IS NULL");
         if ($stmt->execute([$_SESSION['user_id'], $complaint_id])) {
             $_SESSION['success'] = "Complaint #$complaint_id picked up successfully!";
@@ -85,7 +96,7 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link active" href="assigned_complaints.php">
-                                <i class="fas fa-list-alt"></i> Assigned Complaints
+                                <i class="fas fa-list-alt"></i> Manage Complaints
                             </a>
                         </li>
                         <li class="nav-item">
@@ -169,121 +180,168 @@
                     </div>
                 </div>
 
-                <!-- Complaints List -->
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">
-                                    My Assigned Complaints 
-                                    <span class="badge bg-primary"><?php echo count($complaints); ?></span>
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <?php if (count($complaints) > 0): ?>
-                                    <div class="row">
-                                        <?php foreach ($complaints as $complaint): ?>
-                                            <div class="col-lg-6 col-xl-4 mb-4">
-                                                <div class="card h-100 status-<?php echo $complaint['status']; ?>">
-                                                    <div class="card-header d-flex justify-content-between align-items-center">
-                                                        <h6 class="mb-0">#<?php echo $complaint['id']; ?></h6>
-                                                        <span class="<?php echo getStatusBadge($complaint['status']); ?>">
-                                                            <?php echo ucfirst(str_replace('_', ' ', $complaint['status'])); ?>
-                                                        </span>
+                <!-- Tabs for My Complaints and Available -->
+                <ul class="nav nav-tabs mb-4 px-3 border-0" id="complaintTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-bold border-0 bg-transparent py-3" id="my-tab" data-bs-toggle="tab" data-bs-target="#my-complaints" type="button" role="tab">
+                            <i class="fas fa-user-check me-2"></i> My Assigned <span class="badge bg-primary ms-1"><?php echo count($complaints); ?></span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold border-0 bg-transparent py-3" id="available-tab" data-bs-toggle="tab" data-bs-target="#available-complaints" type="button" role="tab">
+                            <i class="fas fa-clipboard-list me-2"></i> Available to Pickup 
+                            <?php 
+                            $stmt_avail = $pdo->query("SELECT COUNT(*) FROM complaints WHERE send_to = 'staff' AND assigned_to IS NULL");
+                            $avail_count = $stmt_avail->fetchColumn();
+                            ?>
+                            <span class="badge bg-info ms-1"><?php echo $avail_count; ?></span>
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="complaintTabsContent">
+                    <!-- My Assigned Tab -->
+                    <div class="tab-pane fade show active" id="my-complaints" role="tabpanel">
+                        <div class="row">
+                            <?php if (count($complaints) > 0): ?>
+                                <?php foreach ($complaints as $complaint): ?>
+                                    <div class="col-lg-6 col-xl-4 mb-4">
+                                        <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden status-card-wrapper">
+                                            <div class="card-header border-0 d-flex justify-content-between align-items-center py-3 px-4 bg-white">
+                                                <h6 class="mb-0 fw-bold text-primary">#<?php echo $complaint['id']; ?></h6>
+                                                <span class="badge-status <?php echo getStatusBadge($complaint['status']); ?>">
+                                                    <?php echo ucfirst(str_replace('_', ' ', $complaint['status'])); ?>
+                                                </span>
+                                            </div>
+                                            <div class="card-body px-4">
+                                                <div class="d-flex align-items-center mb-3">
+                                                    <div class="flex-shrink-0 bg-light rounded-circle p-2 me-3">
+                                                        <i class="fas fa-user-graduate text-muted"></i>
                                                     </div>
-                                                    <div class="card-body">
-                                                        <div class="mb-2">
-                                                            <strong>Student:</strong> <?php echo htmlspecialchars($complaint['student_name']); ?>
-                                                        </div>
-                                                        <div class="mb-2">
-                                                            <strong>Email:</strong> 
-                                                            <small><?php echo htmlspecialchars($complaint['student_email']); ?></small>
-                                                        </div>
-                                                        <div class="mb-2">
-                                                            <strong>Category:</strong> 
-                                                            <span class="badge bg-secondary">
-                                                                <?php echo ucfirst($complaint['category']); ?>
-                                                            </span>
-                                                        </div>
-                                                        <div class="mb-2">
-                                                            <strong>Submitted:</strong> <?php echo formatDate($complaint['created_at']); ?>
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <strong>Description:</strong>
-                                                            <p class="small text-muted mb-0">
-                                                                <?php echo substr(htmlspecialchars($complaint['description']), 0, 120) . '...'; ?>
-                                                            </p>
-                                                        </div>
-                                                        
-                                                        <?php if ($complaint['admin_remarks']): ?>
-                                                            <div class="mb-3">
-                                                                <strong>Staff Response:</strong>
-                                                                <p class="small text-info mb-0">
-                                                                    <?php echo substr(htmlspecialchars($complaint['admin_remarks']), 0, 100) . '...'; ?>
-                                                                </p>
-                                                            </div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <div class="card-footer">
-                                                        <div class="d-flex gap-2">
-                                                            <button class="btn btn-sm btn-outline-primary flex-fill" 
-                                                                    onclick="viewComplaint(<?php echo $complaint['id']; ?>)">
-                                                                <i class="fas fa-eye"></i> View
-                                                            </button>
-                                                            <button class="btn btn-sm btn-primary flex-fill" 
-                                                                    onclick="updateComplaint(<?php echo $complaint['id']; ?>)">
-                                                                <i class="fas fa-edit"></i> Update
-                                                            </button>
-                                                        </div>
-                                                        
-                                                        <?php if ($complaint['status'] == 'pending'): ?>
-                                                            <div class="mt-2 d-flex gap-2">
-                                                                <button class="btn btn-sm btn-info flex-fill" 
-                                                                        onclick="quickUpdate(<?php echo $complaint['id']; ?>, 'in_progress')">
-                                                                    <i class="fas fa-play"></i> Start
-                                                                </button>
-                                                                <button class="btn btn-sm btn-danger flex-fill" 
-                                                                        onclick="quickUpdate(<?php echo $complaint['id']; ?>, 'rejected')">
-                                                                    <i class="fas fa-times"></i> Reject
-                                                                </button>
-                                                            </div>
-                                                        <?php elseif ($complaint['status'] == 'in_progress'): ?>
-                                                            <div class="mt-2 d-flex gap-2">
-                                                                <button class="btn btn-sm btn-success flex-fill" 
-                                                                        onclick="quickUpdate(<?php echo $complaint['id']; ?>, 'resolved')">
-                                                                    <i class="fas fa-check"></i> Resolve
-                                                                </button>
-                                                                <button class="btn btn-sm btn-danger flex-fill" 
-                                                                        onclick="quickUpdate(<?php echo $complaint['id']; ?>, 'rejected')">
-                                                                    <i class="fas fa-times"></i> Reject
-                                                                </button>
-                                                            </div>
-                                                        <?php endif; ?>
+                                                    <div>
+                                                        <div class="fw-bold text-dark"><?php echo htmlspecialchars($complaint['student_name']); ?></div>
+                                                        <small class="text-muted"><?php echo htmlspecialchars($complaint['student_email']); ?></small>
                                                     </div>
                                                 </div>
+                                                <div class="mb-3">
+                                                    <span class="badge bg-purple bg-opacity-10 text-purple border-0 px-2 py-1" style="color: #6C63FF; background-color: rgba(108, 99, 255, 0.1);">
+                                                        <i class="fas fa-tag me-1 small"></i> <?php echo ucfirst($complaint['category']); ?>
+                                                    </span>
+                                                    <span class="small text-muted ms-2"><i class="far fa-calendar-alt me-1"></i> <?php echo formatDate($complaint['created_at']); ?></span>
+                                                </div>
+                                                <div class="mb-0">
+                                                    <p class="small text-muted mb-0 line-clamp-3">
+                                                        <?php echo htmlspecialchars($complaint['description']); ?>
+                                                    </p>
+                                                </div>
                                             </div>
-                                        <?php endforeach; ?>
+                                            <div class="card-footer bg-white border-0 px-4 pb-4 mt-auto">
+                                                <div class="d-flex gap-2 mb-2">
+                                                    <button class="btn btn-sm btn-light flex-fill rounded-pill fw-bold" 
+                                                            onclick="viewComplaint(<?php echo $complaint['id']; ?>)">
+                                                        <i class="fas fa-eye me-1"></i> View Details
+                                                    </button>
+                                                    <button class="btn btn-sm btn-primary flex-fill rounded-pill fw-bold shadow-sm" 
+                                                            onclick="updateComplaint(<?php echo $complaint['id']; ?>)">
+                                                        <i class="fas fa-reply me-1"></i> Respond
+                                                    </button>
+                                                </div>
+                                                
+                                                <?php if ($complaint['status'] == 'pending'): ?>
+                                                    <button class="btn btn-sm btn-outline-info w-100 rounded-pill fw-bold" 
+                                                            onclick="updateComplaint(<?php echo $complaint['id']; ?>, 'in_progress')">
+                                                        <i class="fas fa-play me-1"></i> Start Working
+                                                    </button>
+                                                <?php elseif ($complaint['status'] == 'in_progress'): ?>
+                                                    <div class="d-flex gap-2">
+                                                        <button class="btn btn-sm btn-outline-success flex-fill rounded-pill fw-bold" 
+                                                                onclick="updateComplaint(<?php echo $complaint['id']; ?>, 'resolved')">
+                                                            <i class="fas fa-check me-1"></i> Resolve
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-danger flex-fill rounded-pill fw-bold" 
+                                                                onclick="updateComplaint(<?php echo $complaint['id']; ?>, 'rejected')">
+                                                            <i class="fas fa-times me-1"></i> Reject
+                                                        </button>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
                                     </div>
-                                <?php else: ?>
-                                    <div class="text-center py-5">
-                                        <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
-                                        <h5 class="text-muted">
-                                            <?php if ($status_filter || $priority): ?>
-                                                No complaints match your filters
-                                            <?php else: ?>
-                                                No complaints assigned yet
-                                            <?php endif; ?>
-                                        </h5>
-                                        <p class="text-muted">
-                                            <?php if ($status_filter || $priority): ?>
-                                                Try adjusting your filters or <a href="assigned_complaints.php">view all complaints</a>.
-                                            <?php else: ?>
-                                                Complaints will appear here when they are assigned to you by an administrator.
-                                            <?php endif; ?>
-                                        </p>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="col-12 text-center py-5">
+                                    <div class="bg-light d-inline-block rounded-circle p-4 mb-3">
+                                        <i class="fas fa-tasks fa-3x text-muted opacity-50"></i>
                                     </div>
-                                <?php endif; ?>
-                            </div>
+                                    <h5 class="text-muted">No complaints assigned to you</h5>
+                                    <p class="text-muted">Check the 'Available' tab to pick up new complaints.</p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Available Tab -->
+                    <div class="tab-pane fade" id="available-complaints" role="tabpanel">
+                        <div class="row">
+                            <?php 
+                            $stmt_all_avail = $pdo->prepare("
+                                SELECT c.*, s.username as student_name, s.email as student_email
+                                FROM complaints c 
+                                JOIN users s ON c.student_id = s.id 
+                                WHERE c.send_to = 'staff' AND c.assigned_to IS NULL
+                                ORDER BY c.created_at DESC
+                            ");
+                            $stmt_all_avail->execute();
+                            $available_tasks = $stmt_all_avail->fetchAll();
+                            
+                            if (count($available_tasks) > 0): 
+                                foreach ($available_tasks as $task): ?>
+                                    <div class="col-lg-6 col-xl-4 mb-4">
+                                        <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
+                                            <div class="card-header border-0 d-flex justify-content-between align-items-center py-3 px-4 bg-white">
+                                                <h6 class="mb-0 fw-bold text-info">#<?php echo $task['id']; ?></h6>
+                                                <span class="badge bg-warning text-dark rounded-pill small">NEW</span>
+                                            </div>
+                                            <div class="card-body px-4">
+                                                <div class="d-flex align-items-center mb-3">
+                                                    <div class="flex-shrink-0 bg-light rounded-circle p-2 me-3">
+                                                        <i class="fas fa-user text-muted"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-bold text-dark"><?php echo htmlspecialchars($task['student_name']); ?></div>
+                                                        <small class="text-muted"><?php echo formatDate($task['created_at']); ?></small>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <span class="badge bg-light text-dark border-0 px-2 py-1">
+                                                        <?php echo ucfirst($task['category']); ?>
+                                                    </span>
+                                                </div>
+                                                <p class="small text-muted mb-0">
+                                                    <?php echo substr(htmlspecialchars($task['description']), 0, 150); ?>...
+                                                </p>
+                                            </div>
+                                            <div class="card-footer bg-white border-0 px-4 pb-4">
+                                                <form method="POST">
+                                                    <input type="hidden" name="complaint_id" value="<?php echo $task['id']; ?>">
+                                                    <input type="hidden" name="action" value="pickup">
+                                                    <button type="submit" class="btn btn-info w-100 rounded-pill fw-bold text-white shadow-sm">
+                                                        <i class="fas fa-hand-holding me-1"></i> Pickup & Respond
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="col-12 text-center py-5">
+                                    <div class="bg-success bg-opacity-10 d-inline-block rounded-circle p-4 mb-3">
+                                        <i class="fas fa-check-circle fa-3x text-success"></i>
+                                    </div>
+                                    <h5 class="text-muted">No available complaints</h5>
+                                    <p class="text-muted">You're all caught up! There are no unassigned complaints at the moment.</p>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -322,7 +380,11 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Add Lucide Icons Library -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script>
+        // Initialize Lucide icons on page load
+        lucide.createIcons();
         function viewComplaint(id) {
             const modalBody = document.getElementById('complaintDetails');
             modalBody.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading online student complaint system details...</p></div>';
@@ -345,7 +407,7 @@
                 });
         }
 
-        function updateComplaint(id) {
+        function updateComplaint(id, initialStatus = null) {
             const modalBody = document.getElementById('updateComplaintContent');
             modalBody.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Preparing update form...</p></div>';
             
@@ -353,7 +415,12 @@
             const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
             modal.show();
 
-            fetch('complaint_update.php?id=' + id)
+            let url = 'complaint_update.php?id=' + id;
+            if (initialStatus) {
+                url += '&status=' + initialStatus;
+            }
+
+            fetch(url)
                 .then(response => {
                     if (!response.ok) throw new Error('Network response was not ok');
                     return response.text();
@@ -365,6 +432,60 @@
                     console.error('Error:', error);
                     modalBody.innerHTML = '<div class="alert alert-danger mx-3 my-3">online student complaint system: Failed to load update form. Please try again.</div>';
                 });
+        }
+
+        // Common functions for update modal
+        function applyTemplate(text) {
+            const textarea = document.getElementById('admin_remarks');
+            if (textarea) {
+                textarea.value = text;
+                textarea.focus();
+            }
+        }
+
+        function updateTemplate(status) {
+            const textarea = document.getElementById('admin_remarks');
+            if (textarea && textarea.value.trim() === '') {
+                if (status === 'in_progress') {
+                    textarea.value = 'We have received your complaint and are currently working on a resolution. We will update you shortly.';
+                } else if (status === 'resolved') {
+                    textarea.value = 'Resolution complete: The issues reported in this complaint have been fully addressed. Thank you for your patience.';
+                } else if (status === 'rejected') {
+                    textarea.value = 'We have reviewed your complaint but are unable to proceed at this time as it does not meet the necessary criteria.';
+                }
+            }
+        }
+
+        function submitUpdateForm(e) {
+            e.preventDefault();
+            const form = e.target;
+            const btn = document.getElementById('submitBtn');
+            const originalBtnContent = btn ? btn.innerHTML : 'Save';
+            
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Updating...';
+            }
+            
+            const formData = new FormData(form);
+            
+            fetch('complaint_update.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                const contentDiv = document.getElementById('updateComplaintContent');
+                if (contentDiv) contentDiv.innerHTML = data;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating the complaint.');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtnContent;
+                }
+            });
         }
 
         function quickUpdate(id, status) {

@@ -40,7 +40,7 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="assigned_complaints.php">
-                                <i class="fas fa-list-alt"></i> Assigned Complaints
+                                <i class="fas fa-list-alt"></i> Manage Complaints
                             </a>
                         </li>
                         <li class="nav-item">

@@ -1,4 +1,18 @@
-<?php require_once 'includes/config.php'; ?>
+<?php require_once 'includes/config.php'; 
+// Fetch dynamic images
+$hero_image_path = "";
+$about_image_path = "";
+try {
+    $stmt = $pdo->prepare("SELECT setting_key, setting_value FROM site_settings WHERE setting_key IN ('hero_image', 'about_image')");
+    $stmt->execute();
+    $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+    
+    if (isset($settings['hero_image'])) $hero_image_path = "assets/images/" . $settings['hero_image'];
+    if (isset($settings['about_image'])) $about_image_path = "assets/images/" . $settings['about_image'];
+} catch (PDOException $e) {
+    // If table doesn't exist, fallback to defaults
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -354,7 +368,7 @@
                         <a class="nav-link" href="#home">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#about">About</a>
+                        <a class="nav-link" href="about.php">About</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#features">Features</a>
@@ -388,7 +402,11 @@
                 </div>
                 <div class="col-lg-6">
                     <div class="text-center">
-                        <i class="fas fa-comments fa-10x text-white opacity-75"></i>
+                        <?php if ($hero_image_path): ?>
+                            <img src="<?php echo $hero_image_path; ?>" alt="Horn of Africa University" class="img-fluid rounded-4 shadow-lg">
+                        <?php else: ?>
+                            <i class="fas fa-comments fa-10x text-white opacity-75"></i>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -504,11 +522,15 @@
                 
                 <div class="col-lg-6">
                     <div class="about-image animate-on-scroll">
-                        <div style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); padding: 50px; border-radius: 20px; text-align: center;">
-                            <i class="fas fa-university fa-5x text-white mb-3"></i>
-                            <h4 class="text-white mb-3">Trusted by Educational Institutions</h4>
-                            <p class="text-white opacity-75">Empowering better communication between students and administration</p>
-                        </div>
+                        <?php if ($about_image_path): ?>
+                            <img src="<?php echo $about_image_path; ?>" alt="About Us" class="img-fluid rounded-4 shadow-lg">
+                        <?php else: ?>
+                            <div style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); padding: 50px; border-radius: 20px; text-align: center;">
+                                <i class="fas fa-university fa-5x text-white mb-3"></i>
+                                <h4 class="text-white mb-3">Trusted by Educational Institutions</h4>
+                                <p class="text-white opacity-75">Empowering better communication between students and administration</p>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -572,7 +594,7 @@
                     <h6 style="color: white; margin-bottom: 20px;">Quick Links</h6>
                     <ul style="list-style: none; padding: 0;">
                         <li><a href="#home" style="color: rgba(255,255,255,0.7); text-decoration: none;">Home</a></li>
-                        <li><a href="#about" style="color: rgba(255,255,255,0.7); text-decoration: none;">About</a></li>
+                        <li><a href="about.php" style="color: rgba(255,255,255,0.7); text-decoration: none;">About</a></li>
                         <li><a href="#features" style="color: rgba(255,255,255,0.7); text-decoration: none;">Features</a></li>
                         <li><a href="index.php" style="color: rgba(255,255,255,0.7); text-decoration: none;">Login</a></li>
                     </ul>

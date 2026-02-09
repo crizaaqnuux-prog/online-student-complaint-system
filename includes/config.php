@@ -18,7 +18,7 @@ $current_dir = basename(dirname(__DIR__));
 
 // Use relative paths where possible, but define SITE_URL for absolute requirements
 define('SITE_URL', $protocol . "://" . $host . (empty($current_dir) || $current_dir == 'htdocs' ? '' : "/" . $current_dir));
-define('SITE_NAME', 'online student complaint system');
+define('SITE_NAME', 'Horn of Africa University SCMS');
 
 // Session Configuration
 if (session_status() === PHP_SESSION_NONE) {

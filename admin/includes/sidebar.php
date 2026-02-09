@@ -30,6 +30,11 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link <?php echo $current_page == 'manage_images.php' ? 'active' : ''; ?>" href="manage_images.php">
+                    <i class="fas fa-images"></i> <span>Manage Images</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link <?php echo $current_page == 'feedbacks.php' ? 'active' : ''; ?>" href="feedbacks.php">
                     <i class="fas fa-comment-dots"></i> <span>Feedbacks</span>
                 </a>

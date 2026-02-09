@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['contact_submit'])) {
 
         /* Navbar Styles */
         .navbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #6C63FF 0%, #8b5cf6 100%);
             box-shadow: 0 2px 15px rgba(0,0,0,0.1);
             padding: 1rem 0;
             transition: all 0.3s ease;
@@ -119,21 +119,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['contact_submit'])) {
         }
 
         .btn-register {
-            background: #ffd700;
-            border: 2px solid #ffd700;
-            color: #333;
+            background: #FFD700;
+            border: 2px solid #FFD700;
+            color: #333 !important;
         }
 
         .btn-register:hover {
             background: transparent;
-            color: #ffd700;
+            color: #FFD700 !important;
             transform: translateY(-2px);
         }
 
         /* Hero Section */
         .hero {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            background: linear-gradient(135deg, #6C63FF 0%, #8b5cf6 100%);
+            padding: 160px 0 100px;
             display: flex;
             align-items: center;
             position: relative;
@@ -187,16 +187,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['contact_submit'])) {
         }
 
         .btn-primary-hero {
-            background: #ffd700;
+            background: #FFD700;
             color: #333;
-            border: 2px solid #ffd700;
+            border: none;
         }
 
         .btn-primary-hero:hover {
-            background: transparent;
-            color: #ffd700;
+            background: #e6c200;
+            color: #333;
             transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(255,215,0,0.3);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
 
         .btn-secondary-hero {
@@ -351,7 +351,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['contact_submit'])) {
         }
 
         .btn-submit {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #6C63FF 0%, #8b5cf6 100%);
             border: none;
             padding: 12px 40px;
             border-radius: 30px;
@@ -469,8 +469,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['contact_submit'])) {
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg fixed-top" id="mainNavbar">
         <div class="container">
-            <a class="navbar-brand" href="#home">
-                <i class="fas fa-graduation-cap me-2"></i><?php echo SITE_NAME; ?>
+            <a class="navbar-brand" href="#home" style="text-transform: lowercase;">
+                <i class="fas fa-graduation-cap me-2"></i>online student complaint system
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -484,7 +484,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['contact_submit'])) {
                         <a class="nav-link" href="#features">Features</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#about">About</a>
+                        <a class="nav-link" href="about.php">About</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#contact">Contact</a>
@@ -504,7 +504,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['contact_submit'])) {
             <div class="row justify-content-center">
                 <div class="col-lg-8">
                     <div class="hero-content">
-                        <h1><?php echo SITE_NAME; ?></h1>
+                        <h1>Horn of Africa University</h1>
+                        <h2 class="text-white h4 mb-4" style="opacity: 0.9;">Online Student Complaint Management System</h2>
                         <p>Streamline complaint handling, improve communication, and ensure every student voice is heard with our comprehensive management platform.</p>
                         <div class="hero-buttons">
                             <a href="register.php" class="btn-hero btn-primary-hero">Get Started</a>
@@ -683,7 +684,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['contact_submit'])) {
                     <h4>Quick Links</h4>
                     <a href="#home">Home</a>
                     <a href="#features">Features</a>
-                    <a href="#about">About</a>
+                    <a href="about.php">About</a>
                     <a href="#contact">Contact</a>
                 </div>
                 <div class="footer-section">
