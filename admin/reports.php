@@ -70,16 +70,21 @@ require_once 'includes/navbar.php';
                 <h5 class="fw-bold mb-1">Export Generation Center</h5>
                 <p class="text-muted small mb-0">Select date ranges to generate institutional reports.</p>
             </div>
-            <form method="GET" class="d-flex gap-2">
-                <input type="date" name="date_from" class="form-control form-control-sm bg-light border-0" value="<?php echo $_GET['date_from'] ?? ''; ?>">
-                <input type="date" name="date_to" class="form-control form-control-sm bg-light border-0" value="<?php echo $_GET['date_to'] ?? ''; ?>">
-                <button type="submit" name="export" value="csv" class="btn btn-success btn-sm px-4 fw-bold">
-                    <i class="fas fa-file-csv me-2"></i> CSV
-                </button>
-                <button type="button" onclick="window.print()" class="btn btn-light border btn-sm px-4 fw-bold">
-                    <i class="fas fa-print me-2"></i> Print
-                </button>
-            </form>
+            <div class="d-flex gap-2">
+                <a href="complaint_report_individual.php" class="btn btn-primary btn-sm px-4 fw-bold">
+                    <i class="fas fa-file-alt me-2"></i> Single Case Reports
+                </a>
+                <form method="GET" class="d-flex gap-2 mb-0">
+                    <input type="date" name="date_from" class="form-control form-control-sm bg-light border-0" value="<?php echo $_GET['date_from'] ?? ''; ?>">
+                    <input type="date" name="date_to" class="form-control form-control-sm bg-light border-0" value="<?php echo $_GET['date_to'] ?? ''; ?>">
+                    <button type="submit" name="export" value="csv" class="btn btn-success btn-sm px-4 fw-bold">
+                        <i class="fas fa-file-csv me-2"></i> CSV
+                    </button>
+                    <button type="button" onclick="window.print()" class="btn btn-light border btn-sm px-4 fw-bold">
+                        <i class="fas fa-print me-2"></i> Print
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </div>

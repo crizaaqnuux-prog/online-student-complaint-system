@@ -180,9 +180,14 @@ require_once 'includes/navbar.php';
                                 <td><?php echo $complaint['assigned_to_name'] ?: '<span class="text-muted italic small">Unassigned</span>'; ?></td>
                                 <td><span class="text-muted small"><?php echo formatDate($complaint['created_at']); ?></span></td>
                                 <td class="text-end pe-4">
-                                    <button class="btn btn-sm btn-primary px-3 fw-bold" onclick="event.stopPropagation(); manageComplaint(<?php echo $complaint['id']; ?>)">
-                                        Manage
-                                    </button>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a href="complaint_report_individual.php?id=<?php echo $complaint['id']; ?>" class="btn btn-sm btn-outline-info px-3 fw-bold" onclick="event.stopPropagation();">
+                                            Report
+                                        </a>
+                                        <button class="btn btn-sm btn-primary px-3 fw-bold" onclick="event.stopPropagation(); manageComplaint(<?php echo $complaint['id']; ?>)">
+                                            Manage
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
